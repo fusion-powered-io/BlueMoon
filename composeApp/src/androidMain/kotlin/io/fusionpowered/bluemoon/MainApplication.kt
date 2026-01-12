@@ -1,6 +1,7 @@
 package io.fusionpowered.bluemoon
 
 import android.app.Application
+import io.fusionpowered.bluemoon.di.bluetoothModule
 import io.fusionpowered.bluemoon.di.initKoin
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -12,6 +13,7 @@ class MainApplication : Application() {
         initKoin {
             androidLogger()
             androidContext(this@MainApplication)
+            modules(bluetoothModule)
         }
     }
 }
