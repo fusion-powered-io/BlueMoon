@@ -10,9 +10,7 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
-
+import io.fusionpowered.bluemoon.adapter.ui.App
 
 class MainActivity : ComponentActivity() {
 
@@ -36,14 +34,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             App()
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-    }
-
-    override fun onPause() {
-        super.onPause()
     }
 
     override fun onGenericMotionEvent(event: MotionEvent?): Boolean {
@@ -78,10 +68,4 @@ class MainActivity : ComponentActivity() {
         return true
     }
 
-}
-
-@Preview
-@Composable
-fun AppAndroidPreview() {
-    App()
 }

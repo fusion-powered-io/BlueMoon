@@ -1,4 +1,4 @@
-package io.fusionpowered.bluemoon.di
+package io.fusionpowered.bluemoon
 
 import org.koin.core.annotation.Module
 

@@ -11,6 +11,11 @@ plugins {
 }
 
 kotlin {
+
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     androidTarget {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
@@ -99,7 +104,7 @@ android {
 
 compose.desktop {
     application {
-        mainClass = "io.fusionpowered.bluemoon.MainKt"
+        mainClass = "io.fusionpowered.bluemoon.MainApplicationKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)

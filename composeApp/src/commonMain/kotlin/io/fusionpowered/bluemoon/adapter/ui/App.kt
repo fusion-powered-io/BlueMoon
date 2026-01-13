@@ -1,4 +1,4 @@
-package io.fusionpowered.bluemoon
+package io.fusionpowered.bluemoon.adapter.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -12,7 +12,6 @@ import androidx.compose.ui.graphics.Color.Companion.Black
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
-@Preview
 fun App() {
     MaterialTheme {
         Column(
