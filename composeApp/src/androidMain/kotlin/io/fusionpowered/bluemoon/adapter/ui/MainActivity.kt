@@ -1,7 +1,6 @@
-package io.fusionpowered.bluemoon
+package io.fusionpowered.bluemoon.adapter.ui
 
 import android.os.Bundle
-import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -10,9 +9,12 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import io.fusionpowered.bluemoon.adapter.ui.App
+import io.fusionpowered.bluemoon.ControllerInputHandler
+import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
+
+    val controllerInputHandler: ControllerInputHandler by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -40,7 +42,7 @@ class MainActivity : ComponentActivity() {
         if (event == null) {
             return true
         }
-        Log.i("MainActivity", "(${event.rawX}, ${event.rawY})")
+        controllerInputHandler.handle("(${event.rawX}, ${event.rawY})")
         return true
     }
 
@@ -48,7 +50,7 @@ class MainActivity : ComponentActivity() {
         if (event == null) {
             return true
         }
-        Log.i("MainActivity", event.keyCode.toString())
+        controllerInputHandler.handle(event.keyCode.toString())
         return true
     }
 
@@ -56,7 +58,7 @@ class MainActivity : ComponentActivity() {
         if (event == null) {
             return true
         }
-        Log.i("MainActivity", event.keyCode.toString())
+        controllerInputHandler.handle(event.keyCode.toString())
         return true
     }
 
@@ -64,7 +66,7 @@ class MainActivity : ComponentActivity() {
         if (event == null) {
             return true
         }
-        Log.i("MainActivity", event.keyCode.toString())
+        controllerInputHandler.handle(event.keyCode.toString())
         return true
     }
 
