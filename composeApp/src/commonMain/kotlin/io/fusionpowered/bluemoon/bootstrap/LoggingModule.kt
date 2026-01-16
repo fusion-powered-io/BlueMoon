@@ -1,4 +1,4 @@
-package io.fusionpowered.bluemoon.adapter.logging
+package io.fusionpowered.bluemoon.bootstrap
 
 import org.koin.core.annotation.Configuration
 import org.koin.core.annotation.Module

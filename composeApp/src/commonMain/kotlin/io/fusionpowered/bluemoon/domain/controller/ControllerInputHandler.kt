@@ -1,4 +1,4 @@
-package io.fusionpowered.bluemoon
+package io.fusionpowered.bluemoon.domain.controller
 
 interface ControllerInputHandler {
 

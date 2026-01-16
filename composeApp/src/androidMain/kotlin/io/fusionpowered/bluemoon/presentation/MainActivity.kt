@@ -1,5 +1,8 @@
-package io.fusionpowered.bluemoon.adapter.ui
+package io.fusionpowered.bluemoon.presentation
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -9,13 +12,15 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import io.fusionpowered.bluemoon.ControllerInputHandler
+import androidx.annotation.RequiresApi
+import io.fusionpowered.bluemoon.domain.controller.ControllerInputHandler
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
 
     val controllerInputHandler: ControllerInputHandler by inject()
 
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -33,8 +38,12 @@ class MainActivity : ComponentActivity() {
         // Listen for UI visibility events
         window.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN)
 
+        if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_CONNECT), 0)
+        }
+
         setContent {
-            App()
+            ViewEntryPoint()
         }
     }
 

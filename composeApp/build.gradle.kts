@@ -13,7 +13,11 @@ plugins {
 kotlin {
 
     compilerOptions {
-        freeCompilerArgs.add("-Xexpect-actual-classes")
+        freeCompilerArgs.addAll(
+            "-Xexpect-actual-classes",
+            "-Xcontext-parameters",
+            "-Xexplicit-backing-fields"
+        )
     }
 
     androidTarget {
@@ -39,11 +43,13 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.jetbrains.navigation3.ui)
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.koin.composeViewmodel)
             implementation(libs.koin.composeViewmodelNavigation)
+            implementation(libs.koin.composeNavigation3)
             api(libs.koin.annotations)
         }
         commonTest.dependencies {

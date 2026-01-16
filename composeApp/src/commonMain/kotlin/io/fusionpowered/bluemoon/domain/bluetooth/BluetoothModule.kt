@@ -1,4 +1,4 @@
-package io.fusionpowered.bluemoon.adapter.bluetooth
+package io.fusionpowered.bluemoon.domain.bluetooth
 
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Configuration

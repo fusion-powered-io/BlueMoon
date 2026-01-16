@@ -1,16 +1,14 @@
-package io.fusionpowered.bluemoon.adapter.bluetooth
+package io.fusionpowered.bluemoon.domain.bluetooth.application
 
-import android.content.Context
-import io.fusionpowered.bluemoon.port.InputSender
+import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothConnectionProvider
 import org.koin.core.annotation.Single
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.logger.Logger
 
 @Single
-actual class BluetoothInputSender actual constructor() : KoinComponent, InputSender {
+actual class BluetoothService actual constructor() : KoinComponent, BluetoothConnectionProvider {
 
-    private val context: Context by inject()
     private val logger: Logger by inject()
 
     override fun send(key: String) {
