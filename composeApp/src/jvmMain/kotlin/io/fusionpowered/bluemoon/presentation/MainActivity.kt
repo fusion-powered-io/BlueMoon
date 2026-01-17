@@ -18,7 +18,7 @@ fun mainActivity(
         onCloseRequest = applicationScope::exitApplication,
         title = "BlueMoon",
     ) {
-        ViewEntryPoint()
+        UiEntryPoint()
         controllerInputHandler.handle("test")
     }
 }

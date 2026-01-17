@@ -1,6 +1,0 @@
-package io.fusionpowered.bluemoon.presentation.selectconnection
-
-import kotlinx.serialization.Serializable
-
-@Serializable
-object SelectConnectionRoute
