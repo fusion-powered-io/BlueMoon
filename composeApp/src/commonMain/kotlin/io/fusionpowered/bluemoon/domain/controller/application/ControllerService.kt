@@ -1,19 +1,7 @@
 package io.fusionpowered.bluemoon.domain.controller.application
 
-import io.fusionpowered.bluemoon.domain.controller.ControllerInputHandler
-import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothConnectionProvider
+import io.fusionpowered.bluemoon.domain.controller.ControllerStateProvider
 import org.koin.core.annotation.Single
-import org.koin.core.logger.Logger
 
 @Single
-class ControllerService(
-    private val logger: Logger,
-    private val bluetoothConnectionProvider: BluetoothConnectionProvider,
-) : ControllerInputHandler {
-
-    override fun handle(keyCode: String) {
-        logger.info("In controller")
-        bluetoothConnectionProvider.send(keyCode)
-    }
-
-}
+expect class ControllerService() : ControllerStateProvider

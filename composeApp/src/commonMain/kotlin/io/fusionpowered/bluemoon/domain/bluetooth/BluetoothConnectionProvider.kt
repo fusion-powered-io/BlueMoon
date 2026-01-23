@@ -1,12 +1,19 @@
 package io.fusionpowered.bluemoon.domain.bluetooth
 
-import io.fusionpowered.bluemoon.domain.bluetooth.model.PairedDevice
-import kotlinx.coroutines.flow.Flow
+import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
+import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
+import io.fusionpowered.bluemoon.domain.controller.model.ControllerState
+import kotlinx.coroutines.flow.StateFlow
 
 interface BluetoothConnectionProvider {
 
-    val pairedDevicesFlow: Flow<List<PairedDevice>>
+    val pairedDevicesFlow: StateFlow<Set<BluetoothDevice>>
 
-    fun send(key: String)
+    val connectionStateFlow: StateFlow<ConnectionState>
 
+    fun connect(device: BluetoothDevice)
+
+    fun send(controllerState: ControllerState)
+
+    fun startScanning()
 }

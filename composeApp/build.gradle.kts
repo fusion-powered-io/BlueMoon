@@ -16,7 +16,7 @@ kotlin {
         freeCompilerArgs.addAll(
             "-Xexpect-actual-classes",
             "-Xcontext-parameters",
-            "-Xexplicit-backing-fields"
+            "-XXLanguage:+ExplicitBackingFields"
         )
     }
 

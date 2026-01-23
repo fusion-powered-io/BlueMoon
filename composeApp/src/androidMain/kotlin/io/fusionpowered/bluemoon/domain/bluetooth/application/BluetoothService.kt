@@ -2,45 +2,239 @@ package io.fusionpowered.bluemoon.domain.bluetooth.application
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothHidDevice
+import android.bluetooth.BluetoothHidDeviceAppSdpSettings
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import androidx.annotation.RequiresApi
 import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothConnectionProvider
-import io.fusionpowered.bluemoon.domain.bluetooth.mapper.toPairedDevice
-import io.fusionpowered.bluemoon.domain.bluetooth.model.PairedDevice
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flow
+import io.fusionpowered.bluemoon.domain.bluetooth.mapper.toBluetoothDevice
+import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
+import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
+import io.fusionpowered.bluemoon.domain.controller.model.ControllerState
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import org.koin.core.annotation.Single
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.logger.Logger
-import kotlin.time.Duration.Companion.seconds
+import java.util.concurrent.Executors
 
-@RequiresApi(Build.VERSION_CODES.S)
+private typealias AndroidBluetoothDevice = android.bluetooth.BluetoothDevice
+
 @SuppressLint("MissingPermission")
+@RequiresApi(Build.VERSION_CODES.P)
 @Single
 actual class BluetoothService actual constructor() : KoinComponent, BluetoothConnectionProvider {
 
-    private val applicationContext: Context by inject()
-    private val logger: Logger by inject()
-    private val bluetoothManager: BluetoothManager = applicationContext.getSystemService(BluetoothManager::class.java)
-    private val bluetoothAdapter: BluetoothAdapter = checkNotNull(bluetoothManager.adapter)
+    private val applicationContext by inject<Context>()
+    private val logger by inject<Logger>()
+    private val manager = applicationContext.getSystemService(BluetoothManager::class.java)
+    private val adapter = checkNotNull(manager.adapter)
 
-    override val pairedDevicesFlow: Flow<List<PairedDevice>> =
-        flow {
-            while (true) {
-                bluetoothAdapter.bondedDevices
-                    .map { it.toPairedDevice() }
-                    .let { emit(it) }
-                delay(1.seconds)
+    var pairedAndroidDevices = mutableSetOf<AndroidBluetoothDevice>()
+
+    final override val pairedDevicesFlow: StateFlow<Set<BluetoothDevice>>
+        field = MutableStateFlow(emptySet())
+
+
+    final override val connectionStateFlow: StateFlow<ConnectionState>
+        field = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
+
+    private var hidDevice: BluetoothHidDevice? = null
+    private var connectedDevice: AndroidBluetoothDevice? = null
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    @RequiresApi(Build.VERSION_CODES.P)
+    private val serviceDiscoveryProtocolSettings = BluetoothHidDeviceAppSdpSettings(
+        "BlueMoon Gamepad",
+        "BlueMoon HID Controller",
+        "Fusion",
+        BluetoothHidDevice.SUBCLASS1_COMBO,
+        ubyteArrayOf(
+            0x05u, 0x01u, 0x09u, 0x05u, 0xA1u, 0x01u, 0xA1u, 0x00u, 0x09u, 0x30u, 0x09u, 0x31u, 0x15u, 0x00u, 0x26u, 0xFFu,
+            0xFFu, 0x35u, 0x00u, 0x46u, 0xFFu, 0xFFu, 0x95u, 0x02u, 0x75u, 0x10u, 0x81u, 0x02u, 0xC0u, 0xA1u, 0x00u, 0x09u,
+            0x33u, 0x09u, 0x34u, 0x15u, 0x00u, 0x26u, 0xFFu, 0xFFu, 0x35u, 0x00u, 0x46u, 0xFFu, 0xFFu, 0x95u, 0x02u, 0x75u,
+            0x10u, 0x81u, 0x02u, 0xC0u, 0x05u, 0x01u, 0x09u, 0x32u, 0x15u, 0x00u, 0x26u, 0xFFu, 0x00u, 0x95u, 0x01u, 0x75u,
+            0x08u, 0x81u, 0x02u, 0x05u, 0x01u, 0x09u, 0x35u, 0x15u, 0x00u, 0x26u, 0xFFu, 0x00u, 0x95u, 0x01u, 0x75u, 0x08u,
+            0x81u, 0x02u, 0x05u, 0x09u, 0x19u, 0x01u, 0x29u, 0x0Au, 0x95u, 0x0Au, 0x75u, 0x01u, 0x81u, 0x02u, 0x05u, 0x01u,
+            0x09u, 0x39u, 0x15u, 0x01u, 0x25u, 0x08u, 0x35u, 0x00u, 0x46u, 0x3Bu, 0x10u, 0x66u, 0x0Eu, 0x00u, 0x75u, 0x04u,
+            0x95u, 0x01u, 0x81u, 0x42u, 0x75u, 0x02u, 0x95u, 0x01u, 0x81u, 0x03u, 0x75u, 0x08u, 0x95u, 0x02u, 0x81u, 0x03u,
+            0xC0u
+        ).toByteArray()
+    )
+
+    private val callback = object : BluetoothHidDevice.Callback() {
+        override fun onConnectionStateChanged(device: AndroidBluetoothDevice?, state: Int) {
+            if (state == BluetoothProfile.STATE_CONNECTED) {
+                connectedDevice = device
+            } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
+                connectedDevice = null
             }
-        }.distinctUntilChanged()
+        }
+    }
 
-    override fun send(key: String) {
-        logger.info(key)
+    private val scanReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                AndroidBluetoothDevice.ACTION_FOUND -> {
+                    val device: AndroidBluetoothDevice? = intent.getParcelableExtra(AndroidBluetoothDevice.EXTRA_DEVICE)
+                    device?.let {
+                        if (it.name != null) {
+                            pairedAndroidDevices.add(it)
+                            pairedDevicesFlow.update { pairedDevices -> pairedDevices + it.toBluetoothDevice() }
+                        }
+                    }
+                }
+
+                BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+                    logger.info("Bluetooth scanning finished")
+                }
+            }
+        }
+    }
+
+    init {
+        // 1. Initialize the HID Profile Proxy
+        adapter.getProfileProxy(applicationContext, object : BluetoothProfile.ServiceListener {
+            override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
+                if (profile == BluetoothProfile.HID_DEVICE) {
+                    hidDevice = proxy as BluetoothHidDevice
+                    // 2. Register our Gamepad with the Bluetooth Stack
+                    val executor = Executors.newSingleThreadExecutor()
+                    hidDevice?.registerApp(serviceDiscoveryProtocolSettings, null, null, executor, callback)
+                }
+            }
+
+            override fun onServiceDisconnected(profile: Int) {
+                if (profile == BluetoothProfile.HID_DEVICE) hidDevice = null
+            }
+        }, BluetoothProfile.HID_DEVICE)
+
+        // 3. Register Receiver for Scanning
+        val filter = IntentFilter().apply {
+            addAction(AndroidBluetoothDevice.ACTION_FOUND)
+            addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+        }
+        applicationContext.registerReceiver(scanReceiver, filter)
+    }
+
+    // --- Scanning Logic ---
+
+    override fun startScanning() {
+        pairedAndroidDevices.clear()
+        pairedDevicesFlow.update { emptySet() }
+        if (adapter.isDiscovering) adapter.cancelDiscovery()
+        adapter.startDiscovery()
+    }
+
+
+    // --- Connection Logic ---
+
+    override fun connect(device: BluetoothDevice) {
+        connectionStateFlow.update { ConnectionState.Connecting(device) }
+        adapter.cancelDiscovery()
+        // Most hosts require the device to be bonded first for HID
+        val androidDevice = pairedAndroidDevices.find { it.address == device.mac }
+        if (androidDevice!!.bondState == AndroidBluetoothDevice.BOND_NONE) {
+            androidDevice.createBond()
+        } else {
+            hidDevice?.connect(androidDevice)
+            connectionStateFlow.update { ConnectionState.Connected(device) }
+        }
+    }
+
+
+    override fun send(controllerState: ControllerState) {
+        // 14 bytes per the C struct: 4x16bit Sticks, 2x8bit Triggers, 2bit Buttons, 4bit Hat, 2bit Pad, 16bit Pad
+        val reportData = ByteArray(14)
+
+        // --- Left Stick (X, Y) 16-bit Little Endian ---
+        val lsX = mapStick16(controllerState.leftStickX)
+        val lsY = mapStick16(controllerState.leftStickY)
+        reportData[0] = (lsX and 0xFF).toByte()
+        reportData[1] = ((lsX shr 8) and 0xFF).toByte()
+        reportData[2] = (lsY and 0xFF).toByte()
+        reportData[3] = ((lsY shr 8) and 0xFF).toByte()
+
+        // --- Right Stick (Rx, Ry) 16-bit Little Endian ---
+        val rsX = mapStick16(controllerState.rightStickX)
+        val rsY = mapStick16(controllerState.rightStickY)
+        reportData[4] = (rsX and 0xFF).toByte()
+        reportData[5] = ((rsX shr 8) and 0xFF).toByte()
+        reportData[6] = (rsY and 0xFF).toByte()
+        reportData[7] = ((rsY shr 8) and 0xFF).toByte()
+
+        // --- Triggers (Z, Rz) 8-bit (0-255) ---
+        reportData[8] = (controllerState.l2.coerceIn(0f, 1f) * 255).toInt().toByte()
+        reportData[9] = (controllerState.r2.coerceIn(0f, 1f) * 255).toInt().toByte()
+
+        // --- Buttons & Hat Switch Packing ---
+        // Byte 10: Buttons 1-8
+        var b1 = 0
+        if (controllerState.a) b1 = b1 or (1 shl 0)
+        if (controllerState.b) b1 = b1 or (1 shl 1)
+        if (controllerState.x) b1 = b1 or (1 shl 2)
+        if (controllerState.y) b1 = b1 or (1 shl 3)
+        if (controllerState.l1) b1 = b1 or (1 shl 4)
+        if (controllerState.r1) b1 = b1 or (1 shl 5)
+        if (controllerState.select) b1 = b1 or (1 shl 6)
+        if (controllerState.start) b1 = b1 or (1 shl 7)
+        reportData[10] = b1.toByte()
+
+        // Byte 11: Button 9-10 + Hat (4 bits) + Pad (2 bits)
+        // Layout: [Pad (2)] [Hat (4)] [Btn 10 (1)] [Btn 9 (1)]
+        var b2 = 0
+        if (controllerState.l3) b2 = b2 or (1 shl 0) // Button 9
+        if (controllerState.r3) b2 = b2 or (1 shl 1) // Button 10
+
+        val hatValue = calculateHat(controllerState.dpadX, controllerState.dpadY)
+        // Shift hat value by 2 to sit above the two buttons
+        b2 = b2 or (hatValue shl 2)
+        reportData[11] = b2.toByte()
+
+        // --- Bytes 12-13: Padding ---
+        reportData[12] = 0x00
+        reportData[13] = 0x00
+
+        // Send the report via HID profile
+        // Note: Use report ID 0 as this descriptor does not specify an ID (85 xx)
+        hidDevice?.sendReport(connectedDevice, 0, reportData)
+    }
+
+    /**
+     * Maps float -1.0..1.0 to 16-bit 0..65535
+     */
+    private fun mapStick16(value: Float): Int {
+        return (((value.coerceIn(-1f, 1f) + 1f) / 2f) * 65535).toInt()
+    }
+
+    /**
+     * Converts D-Pad floats to HID Hat Switch values (1-8, 0=Null)
+     */
+    private fun calculateHat(x: Float, y: Float): Int {
+        val up = y < -0.5f
+        val down = y > 0.5f
+        val left = x < -0.5f
+        val right = x > 0.5f
+
+        return when {
+            up && !left && !right -> 1    // North
+            up && right -> 2              // North-East
+            right && !up && !down -> 3    // East
+            down && right -> 4            // South-East
+            down && !left && !right -> 5  // South
+            down && left -> 6             // South-West
+            left && !up && !down -> 7     // West
+            up && left -> 8               // North-West
+            else -> 0                     // Center / Released
+        }
     }
 
 }

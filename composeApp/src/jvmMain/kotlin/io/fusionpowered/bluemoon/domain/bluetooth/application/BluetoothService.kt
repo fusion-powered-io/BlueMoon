@@ -1,9 +1,13 @@
 package io.fusionpowered.bluemoon.domain.bluetooth.application
 
 import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothConnectionProvider
-import io.fusionpowered.bluemoon.domain.bluetooth.model.PairedDevice
+import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
+import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
+import io.fusionpowered.bluemoon.domain.controller.model.ControllerState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import org.koin.core.annotation.Single
@@ -17,26 +21,24 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
 
     private val logger: Logger by inject()
 
-    override val pairedDevicesFlow: Flow<List<PairedDevice>> =
-        flow {
-            while (true) {
-                listOf(
-                    PairedDevice(
-                        name = "test device 1",
-                        mac = "92:B1:B8:42:D1:85"
-                    ),
-                    PairedDevice(
-                        name = "test device 2",
-                        mac = "4b:57:71:1d:d4:96"
-                    )
-                )
-                    .let { emit(it) }
-                delay(1.seconds)
-            }
-        }.distinctUntilChanged()
 
-    override fun send(key: String) {
-        logger.info(key)
+    final override val pairedDevicesFlow: StateFlow<Set<BluetoothDevice>>
+        field = MutableStateFlow<Set<BluetoothDevice>>(emptySet())
+
+    final override val connectionStateFlow: StateFlow<ConnectionState>
+        field = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
+
+
+    override fun connect(device: BluetoothDevice) {
+        logger.info("Tried to connect to ${device.name}")
+    }
+
+    override fun send(controllerState: ControllerState) {
+        logger.info(controllerState.toString())
+    }
+
+    override fun startScanning() {
+        logger.info("TODO: implement scanning")
     }
 
 }

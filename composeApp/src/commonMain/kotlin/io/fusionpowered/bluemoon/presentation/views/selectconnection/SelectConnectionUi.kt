@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -15,7 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import io.fusionpowered.bluemoon.domain.bluetooth.model.PairedDevice
+import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
 import io.fusionpowered.bluemoon.presentation.views.selectconnection.SelectConnectionScreen.State
 
 
@@ -37,7 +39,7 @@ fun SelectConnectionUi(
             }
         }
 
-        is State.ShowingPairedDevices -> {
+        is State.ShowingDiscoveredDevices -> {
             Column(
                 modifier = Modifier
                     .safeContentPadding()
@@ -49,11 +51,12 @@ fun SelectConnectionUi(
                 Column(
                     modifier = Modifier
                         .padding(56.dp)
-                        .fillMaxSize(),
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
                     verticalArrangement = spacedBy(24.dp, alignment = Alignment.Top),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    for (device in state.pairedDevices) {
+                    for (device in state.bluetoothDevices) {
                         Button(
                             onClick = { state.onDeviceClicked(device) },
                         ) {
@@ -73,13 +76,13 @@ fun SelectConnectionUi(
 @Composable
 fun SelectConnectionUiPreview() {
     SelectConnectionUi(
-        state = State.ShowingPairedDevices(
-            pairedDevices = listOf(
-                PairedDevice(
+        state = State.ShowingDiscoveredDevices(
+            bluetoothDevices = setOf(
+                BluetoothDevice(
                     name = "test device 1",
                     mac = "00:00:00:00:00:01"
                 ),
-                PairedDevice(
+                BluetoothDevice(
                     name = "test device 2",
                     mac = "00:00:00:00:00:02"
                 )

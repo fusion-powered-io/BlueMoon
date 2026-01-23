@@ -10,18 +10,20 @@ import org.koin.core.logger.Logger
 class Navigator(
     private val logger: Logger
 ) {
-
     val backStack: SnapshotStateList<Any> = mutableStateListOf(SelectConnectionScreen)
 
     fun navigateTo(destination: Any) {
-        logger.debug("Navigating to ${destination::class.simpleName}")
+        logger.info("Navigating to ${destination::class.simpleName}")
         backStack.add(destination)
     }
 
     fun goBack() {
-        backStack.removeLastOrNull()
-            ?.let { destination -> logger.debug("Navigating back to ${destination::class.simpleName}") }
-            ?: { logger.debug("Tried navigating back, but nowhere to go") }
+        if (backStack.isEmpty()) {
+            logger.info("Tried navigating back, but nowhere to go")
+            return
+        }
+        val destination = backStack.removeLastOrNull()
+        logger.info("Navigating back to ${destination!!::class.simpleName}")
     }
 
 }
