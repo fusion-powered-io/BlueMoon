@@ -13,6 +13,9 @@ plugins {
 kotlin {
 
     compilerOptions {
+        optIn.addAll(
+            "com.google.accompanist.permissions.ExperimentalPermissionsApi"
+        )
         freeCompilerArgs.addAll(
             "-Xexpect-actual-classes",
             "-Xcontext-parameters",
@@ -32,6 +35,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
             implementation(libs.koin.android)
+            implementation(libs.accompanist.permissions)
         }
         commonMain.dependencies {
             implementation(libs.runtime)
@@ -87,7 +91,7 @@ android {
 
     defaultConfig {
         applicationId = "io.fusionpowered.bluemoon"
-        minSdk = 24
+        minSdk = 30
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"

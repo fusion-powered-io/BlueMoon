@@ -2,6 +2,7 @@ package io.fusionpowered.bluemoon.domain.bluetooth.application
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice.EXTRA_DEVICE
 import android.bluetooth.BluetoothHidDevice
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings
 import android.bluetooth.BluetoothManager
@@ -10,8 +11,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Build
-import androidx.annotation.RequiresApi
 import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothConnectionProvider
 import io.fusionpowered.bluemoon.domain.bluetooth.mapper.toBluetoothDevice
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
@@ -25,11 +24,28 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.logger.Logger
 import java.util.concurrent.Executors
+import kotlin.ByteArray
+import kotlin.ExperimentalUnsignedTypes
+import kotlin.Float
+import kotlin.Int
+import kotlin.OptIn
+import kotlin.apply
+import kotlin.checkNotNull
+import kotlin.collections.Set
+import kotlin.collections.emptySet
+import kotlin.collections.find
+import kotlin.collections.mutableSetOf
+import kotlin.collections.toByteArray
+import kotlin.getValue
+import kotlin.lazy
+import kotlin.let
+import kotlin.plus
+import kotlin.takeIf
+import kotlin.ubyteArrayOf
 
 private typealias AndroidBluetoothDevice = android.bluetooth.BluetoothDevice
 
 @SuppressLint("MissingPermission")
-@RequiresApi(Build.VERSION_CODES.P)
 @Single
 actual class BluetoothService actual constructor() : KoinComponent, BluetoothConnectionProvider {
 
@@ -51,7 +67,6 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
     private var connectedDevice: AndroidBluetoothDevice? = null
 
     @OptIn(ExperimentalUnsignedTypes::class)
-    @RequiresApi(Build.VERSION_CODES.P)
     private val serviceDiscoveryProtocolSettings = BluetoothHidDeviceAppSdpSettings(
         "BlueMoon Gamepad",
         "BlueMoon HID Controller",
@@ -94,15 +109,12 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
     private val scanReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
-                AndroidBluetoothDevice.ACTION_FOUND -> {
-                    val device: AndroidBluetoothDevice? = intent.getParcelableExtra(AndroidBluetoothDevice.EXTRA_DEVICE)
-                    device?.let {
-                        if (it.name != null) {
-                            pairedAndroidDevices.add(it)
-                            pairedDevicesFlow.update { pairedDevices -> pairedDevices + it.toBluetoothDevice() }
-                        }
+                AndroidBluetoothDevice.ACTION_FOUND -> intent.getParcelableExtra<AndroidBluetoothDevice>(EXTRA_DEVICE)
+                    ?.takeIf { it.name != null }
+                    ?.let {
+                        pairedAndroidDevices.add(it)
+                        pairedDevicesFlow.update { pairedDevices -> pairedDevices + it.toBluetoothDevice() }
                     }
-                }
 
                 BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
                     logger.info("Bluetooth scanning finished")

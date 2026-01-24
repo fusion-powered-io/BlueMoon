@@ -7,4 +7,4 @@ import org.koin.core.annotation.Module
 @Module
 @Configuration
 @ComponentScan
-expect object BluetoothModule
+object BluetoothModule

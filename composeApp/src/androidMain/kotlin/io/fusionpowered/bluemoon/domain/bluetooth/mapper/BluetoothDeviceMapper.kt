@@ -1,11 +1,12 @@
 package io.fusionpowered.bluemoon.domain.bluetooth.mapper
 
-import android.annotation.SuppressLint
+import android.Manifest.permission.BLUETOOTH_CONNECT
+import androidx.annotation.RequiresPermission
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
 
 private typealias AndroidBluetoothDevice = android.bluetooth.BluetoothDevice
 
-@SuppressLint("MissingPermission")
+@RequiresPermission(BLUETOOTH_CONNECT)
 fun AndroidBluetoothDevice.toBluetoothDevice() =
     BluetoothDevice(
         name = name,
