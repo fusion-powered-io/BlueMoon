@@ -1,6 +1,9 @@
 package io.fusionpowered.bluemoon.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation3.ui.NavDisplay
 import io.fusionpowered.bluemoon.presentation.navigation.Navigator
 import io.fusionpowered.bluemoon.presentation.theme.BlueMoonTheme
@@ -34,6 +37,7 @@ fun UiEntryPoint(
 
                     navigation<ControllerModeScreen> { screen ->
                         ControllerModeUi(
+                            modifier = Modifier.background(color = Color.Black),
                             state = presentControllerMode(screen.device)
                         )
                     }

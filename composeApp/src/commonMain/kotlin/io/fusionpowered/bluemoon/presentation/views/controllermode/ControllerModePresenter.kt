@@ -21,13 +21,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-import org.koin.core.logger.Logger
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun presentControllerMode(
     device: BluetoothDevice,
-    logger: Logger = koinInject(),
     navigator: Navigator = koinInject(),
     bluetoothConnectionProvider: BluetoothConnectionProvider = koinInject(),
     controllerStateProvider: ControllerStateProvider = koinInject(),
