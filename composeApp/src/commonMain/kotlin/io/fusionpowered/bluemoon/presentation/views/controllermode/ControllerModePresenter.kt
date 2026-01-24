@@ -3,6 +3,9 @@ package io.fusionpowered.bluemoon.presentation.views.controllermode
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothConnectionProvider
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
@@ -14,8 +17,12 @@ import io.fusionpowered.bluemoon.presentation.views.controllermode.ControllerMod
 import io.fusionpowered.bluemoon.presentation.views.controllermode.ControllerModeScreen.State.Connected
 import io.fusionpowered.bluemoon.presentation.views.controllermode.ControllerModeScreen.State.Connecting
 import io.fusionpowered.bluemoon.presentation.views.controllermode.ControllerModeScreen.State.Disconnected
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.koin.core.logger.Logger
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun presentControllerMode(
@@ -31,10 +38,17 @@ fun presentControllerMode(
 
     val connectionState by bluetoothConnectionProvider.connectionStateFlow.collectAsStateWithLifecycle(ConnectionState.Disconnected)
     val controllerState by controllerStateProvider.controllerStateFlow.collectAsStateWithLifecycle(ControllerState())
+    var countdownJob by remember { mutableStateOf<Job?>(null) }
 
     LaunchedEffect(controllerState.guide) {
         if (controllerState.guide) {
-            navigator.goBack()
+            countdownJob = launch {
+                delay(3.seconds)
+                navigator.goBack()
+            }
+        } else {
+            countdownJob?.cancel()
+            countdownJob = null
         }
     }
 

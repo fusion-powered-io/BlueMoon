@@ -58,14 +58,25 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
         "Fusion",
         BluetoothHidDevice.SUBCLASS1_COMBO,
         ubyteArrayOf(
-            0x05u, 0x01u, 0x09u, 0x05u, 0xA1u, 0x01u, 0xA1u, 0x00u, 0x09u, 0x30u, 0x09u, 0x31u, 0x15u, 0x00u, 0x26u, 0xFFu,
-            0xFFu, 0x35u, 0x00u, 0x46u, 0xFFu, 0xFFu, 0x95u, 0x02u, 0x75u, 0x10u, 0x81u, 0x02u, 0xC0u, 0xA1u, 0x00u, 0x09u,
-            0x33u, 0x09u, 0x34u, 0x15u, 0x00u, 0x26u, 0xFFu, 0xFFu, 0x35u, 0x00u, 0x46u, 0xFFu, 0xFFu, 0x95u, 0x02u, 0x75u,
-            0x10u, 0x81u, 0x02u, 0xC0u, 0x05u, 0x01u, 0x09u, 0x32u, 0x15u, 0x00u, 0x26u, 0xFFu, 0x00u, 0x95u, 0x01u, 0x75u,
-            0x08u, 0x81u, 0x02u, 0x05u, 0x01u, 0x09u, 0x35u, 0x15u, 0x00u, 0x26u, 0xFFu, 0x00u, 0x95u, 0x01u, 0x75u, 0x08u,
-            0x81u, 0x02u, 0x05u, 0x09u, 0x19u, 0x01u, 0x29u, 0x0Au, 0x95u, 0x0Au, 0x75u, 0x01u, 0x81u, 0x02u, 0x05u, 0x01u,
-            0x09u, 0x39u, 0x15u, 0x01u, 0x25u, 0x08u, 0x35u, 0x00u, 0x46u, 0x3Bu, 0x10u, 0x66u, 0x0Eu, 0x00u, 0x75u, 0x04u,
-            0x95u, 0x01u, 0x81u, 0x42u, 0x75u, 0x02u, 0x95u, 0x01u, 0x81u, 0x03u, 0x75u, 0x08u, 0x95u, 0x02u, 0x81u, 0x03u,
+            0x05u, 0x01u, 0x09u, 0x05u, 0xA1u, 0x01u, 0xA1u, 0x00u,
+            // Sticks: 4 x 16-bit (Bytes 0-7)
+            0x09u, 0x30u, 0x09u, 0x31u, 0x09u, 0x33u, 0x09u, 0x34u,
+            0x15u, 0x00u, 0x26u, 0xFFu, 0xFFu, 0x35u, 0x00u, 0x46u, 0xFFu, 0xFFu,
+            0x95u, 0x04u, 0x75u, 0x10u, 0x81u, 0x02u, 0xC0u,
+            // Triggers: 2 x 8-bit (Bytes 8-9)
+            0x05u, 0x01u, 0x09u, 0x32u, 0x09u, 0x35u,
+            0x15u, 0x00u, 0x26u, 0xFFu, 0x00u, 0x95u, 0x02u, 0x75u, 0x08u, 0x81u, 0x02u,
+            // Buttons: 11 buttons (Byte 10 + part of Byte 11)
+            0x05u, 0x09u, 0x19u, 0x01u, 0x29u, 0x0Bu,
+            0x15u, 0x00u, 0x25u, 0x01u, 0x95u, 0x0Bu, 0x75u, 0x01u, 0x81u, 0x02u,
+            // Padding to finish Byte 11 (5 bits)
+            0x95u, 0x01u, 0x75u, 0x05u, 0x81u, 0x03u,
+            // Hat Switch: 1 x 4-bit (Byte 12)
+            0x05u, 0x01u, 0x09u, 0x39u, 0x15u, 0x01u, 0x25u, 0x08u, 0x35u, 0x00u, 0x46u, 0x3Bu, 0x10u,
+            0x66u, 0x0Eu, 0x00u, 0x95u, 0x01u, 0x75u, 0x04u, 0x81u, 0x42u,
+            // Final Padding to finish Byte 12 (4 bits)
+            0x95u, 0x01u, 0x75u, 0x04u, 0x81u, 0x03u,
+            // End (Total 13 bytes)
             0xC0u
         ).toByteArray()
     )
@@ -152,30 +163,28 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
 
 
     override fun send(controllerState: ControllerState) {
-        // 14 bytes per the C struct: 4x16bit Sticks, 2x8bit Triggers, 2bit Buttons, 4bit Hat, 2bit Pad, 16bit Pad
-        val reportData = ByteArray(14)
+        // Total size is 13 bytes based on the alignment above
+        val reportData = ByteArray(13)
 
-        // --- Left Stick (X, Y) 16-bit Little Endian ---
+        // Sticks (0-7)
         val lsX = mapStick16(controllerState.leftStickX)
         val lsY = mapStick16(controllerState.leftStickY)
+        val rsX = mapStick16(controllerState.rightStickX)
+        val rsY = mapStick16(controllerState.rightStickY)
+
         reportData[0] = (lsX and 0xFF).toByte()
         reportData[1] = ((lsX shr 8) and 0xFF).toByte()
         reportData[2] = (lsY and 0xFF).toByte()
         reportData[3] = ((lsY shr 8) and 0xFF).toByte()
-
-        // --- Right Stick (Rx, Ry) 16-bit Little Endian ---
-        val rsX = mapStick16(controllerState.rightStickX)
-        val rsY = mapStick16(controllerState.rightStickY)
         reportData[4] = (rsX and 0xFF).toByte()
         reportData[5] = ((rsX shr 8) and 0xFF).toByte()
         reportData[6] = (rsY and 0xFF).toByte()
         reportData[7] = ((rsY shr 8) and 0xFF).toByte()
 
-        // --- Triggers (Z, Rz) 8-bit (0-255) ---
+        // Triggers (8-9)
         reportData[8] = (controllerState.l2.coerceIn(0f, 1f) * 255).toInt().toByte()
         reportData[9] = (controllerState.r2.coerceIn(0f, 1f) * 255).toInt().toByte()
 
-        // --- Buttons & Hat Switch Packing ---
         // Byte 10: Buttons 1-8
         var b1 = 0
         if (controllerState.a) b1 = b1 or (1 shl 0)
@@ -188,23 +197,17 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
         if (controllerState.start) b1 = b1 or (1 shl 7)
         reportData[10] = b1.toByte()
 
-        // Byte 11: Button 9-10 + Hat (4 bits) + Pad (2 bits)
-        // Layout: [Pad (2)] [Hat (4)] [Btn 10 (1)] [Btn 9 (1)]
+        // Byte 11: Buttons 9-11
         var b2 = 0
-        if (controllerState.l3) b2 = b2 or (1 shl 0) // Button 9
-        if (controllerState.r3) b2 = b2 or (1 shl 1) // Button 10
-
-        val hatValue = calculateHat(controllerState.dpadX, controllerState.dpadY)
-        // Shift hat value by 2 to sit above the two buttons
-        b2 = b2 or (hatValue shl 2)
+        if (controllerState.l3) b2 = b2 or (1 shl 0)
+        if (controllerState.r3) b2 = b2 or (1 shl 1)
+        if (controllerState.guide) b2 = b2 or (1 shl 2)
         reportData[11] = b2.toByte()
 
-        // --- Bytes 12-13: Padding ---
-        reportData[12] = 0x00
-        reportData[13] = 0x00
+        // Byte 12: Hat Switch (D-Pad)
+        // Now it starts at the beginning of the byte (Bit 0)
+        reportData[12] = calculateHat(controllerState.dpadX, controllerState.dpadY).toByte()
 
-        // Send the report via HID profile
-        // Note: Use report ID 0 as this descriptor does not specify an ID (85 xx)
         hidDevice?.sendReport(connectedDevice, 0, reportData)
     }
 
