@@ -7,7 +7,6 @@ import android.view.KeyEvent.KEYCODE_BACK
 import android.view.KeyEvent.KEYCODE_BUTTON_A
 import android.view.KeyEvent.KEYCODE_BUTTON_B
 import android.view.KeyEvent.KEYCODE_BUTTON_L1
-import android.view.KeyEvent.KEYCODE_BUTTON_MODE
 import android.view.KeyEvent.KEYCODE_BUTTON_R1
 import android.view.KeyEvent.KEYCODE_BUTTON_SELECT
 import android.view.KeyEvent.KEYCODE_BUTTON_START
@@ -31,32 +30,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import org.koin.core.annotation.Single
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.logger.Logger
 
 @Single
 actual class ControllerService actual constructor() : ControllerStateProvider, KoinComponent {
-
-    private val logger by inject<Logger>()
 
     final override val controllerStateFlow: StateFlow<ControllerState>
         field = MutableStateFlow<ControllerState>(ControllerState())
 
     fun handle(input: InputEvent) {
-        logger.info(
-            """
-            ID: ${input.deviceId}
-            Device: ${input.device}
-            Source: ${input.source}
-            ${
-                when (input) {
-                    is MotionEvent -> input.toString()
-                    is KeyEvent -> input.toString()
-                    else -> {}
-                }
-            }
-        """.trimIndent()
-        )
         when (input) {
             is MotionEvent -> {
                 controllerStateFlow.update { controllerState ->
@@ -72,6 +53,7 @@ actual class ControllerService actual constructor() : ControllerStateProvider, K
                     )
                 }
             }
+
             is KeyEvent -> {
                 controllerStateFlow.update { controllerState ->
                     when (input.keyCode) {

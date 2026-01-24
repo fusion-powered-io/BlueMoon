@@ -4,17 +4,12 @@ import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothConnectionProvider
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
 import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
 import io.fusionpowered.bluemoon.domain.controller.model.ControllerState
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flow
 import org.koin.core.annotation.Single
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.logger.Logger
-import kotlin.time.Duration.Companion.seconds
 
 @Single
 actual class BluetoothService actual constructor() : KoinComponent, BluetoothConnectionProvider {

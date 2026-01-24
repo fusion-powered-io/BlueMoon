@@ -24,24 +24,6 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.logger.Logger
 import java.util.concurrent.Executors
-import kotlin.ByteArray
-import kotlin.ExperimentalUnsignedTypes
-import kotlin.Float
-import kotlin.Int
-import kotlin.OptIn
-import kotlin.apply
-import kotlin.checkNotNull
-import kotlin.collections.Set
-import kotlin.collections.emptySet
-import kotlin.collections.find
-import kotlin.collections.mutableSetOf
-import kotlin.collections.toByteArray
-import kotlin.getValue
-import kotlin.lazy
-import kotlin.let
-import kotlin.plus
-import kotlin.takeIf
-import kotlin.ubyteArrayOf
 
 private typealias AndroidBluetoothDevice = android.bluetooth.BluetoothDevice
 
