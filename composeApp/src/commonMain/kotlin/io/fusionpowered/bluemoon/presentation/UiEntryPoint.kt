@@ -1,6 +1,7 @@
 package io.fusionpowered.bluemoon.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,7 +38,9 @@ fun UiEntryPoint(
 
                     navigation<ControllerModeScreen> { screen ->
                         ControllerModeUi(
-                            modifier = Modifier.background(color = Color.Black),
+                            modifier = Modifier
+                                .background(color = Color.Black)
+                                .fillMaxSize(),
                             state = presentControllerMode(screen.device)
                         )
                     }

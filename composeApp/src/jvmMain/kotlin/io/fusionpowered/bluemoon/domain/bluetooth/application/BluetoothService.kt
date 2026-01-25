@@ -17,7 +17,7 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
     private val logger: Logger by inject()
 
 
-    final override val pairedDevicesFlow: StateFlow<Set<BluetoothDevice>>
+    final override val scannedDevicesFlow: StateFlow<Set<BluetoothDevice>>
         field = MutableStateFlow<Set<BluetoothDevice>>(emptySet())
 
     final override val connectionStateFlow: StateFlow<ConnectionState>

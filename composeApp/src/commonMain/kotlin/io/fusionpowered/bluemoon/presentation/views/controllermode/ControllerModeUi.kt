@@ -2,7 +2,6 @@ package io.fusionpowered.bluemoon.presentation.views.controllermode
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
@@ -20,30 +19,23 @@ fun ControllerModeUi(
     modifier: Modifier = Modifier,
     state: State,
 ) =
-    when (state) {
-        State.Disconnected -> Box(modifier)
-
-        is State.Connecting -> Column(
-            modifier = modifier,
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("Connecting to ${state.deviceName}")
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = when (state) {
+                is State.Disconnected -> "Disconnected"
+                is State.Connecting -> "Connecting to ${state.deviceName}"
+                is State.Connected -> "Connected to ${state.deviceName}"
+            },
+            color = Color.White,
+            textAlign = TextAlign.Center
+        )
+        if (state is State.Disconnected) {
+            state.onDisconnected()
         }
-
-        is State.Connected -> Column(
-            modifier = modifier,
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                modifier = Modifier,
-                text = "Connected to ${state.deviceName}",
-                color = Color.White,
-                textAlign = TextAlign.Center
-            )
-        }
-
     }
 
 

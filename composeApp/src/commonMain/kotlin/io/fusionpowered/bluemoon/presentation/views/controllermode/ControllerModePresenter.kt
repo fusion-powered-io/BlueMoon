@@ -16,7 +16,6 @@ import io.fusionpowered.bluemoon.presentation.navigation.Navigator
 import io.fusionpowered.bluemoon.presentation.views.controllermode.ControllerModeScreen.State
 import io.fusionpowered.bluemoon.presentation.views.controllermode.ControllerModeScreen.State.Connected
 import io.fusionpowered.bluemoon.presentation.views.controllermode.ControllerModeScreen.State.Connecting
-import io.fusionpowered.bluemoon.presentation.views.controllermode.ControllerModeScreen.State.Disconnected
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -30,11 +29,11 @@ fun presentControllerMode(
     bluetoothConnectionProvider: BluetoothConnectionProvider = koinInject(),
     controllerStateProvider: ControllerStateProvider = koinInject(),
 ): State {
-    LaunchedEffect(Unit) {
+    LaunchedEffect(bluetoothConnectionProvider) {
         bluetoothConnectionProvider.connect(device)
     }
 
-    val connectionState by bluetoothConnectionProvider.connectionStateFlow.collectAsStateWithLifecycle(ConnectionState.Disconnected)
+    val connectionState by bluetoothConnectionProvider.connectionStateFlow.collectAsStateWithLifecycle(ConnectionState.Connecting(device))
     val controllerState by controllerStateProvider.controllerStateFlow.collectAsStateWithLifecycle(ControllerState())
     var countdownJob by remember { mutableStateOf<Job?>(null) }
 
@@ -42,7 +41,7 @@ fun presentControllerMode(
         if (controllerState.guide) {
             countdownJob = launch {
                 delay(3.seconds)
-                navigator.goBack()
+                bluetoothConnectionProvider.disconnect()
             }
         } else {
             countdownJob?.cancel()
@@ -51,9 +50,13 @@ fun presentControllerMode(
     }
 
     return when (val it = connectionState) {
-        is ConnectionState.Disconnected -> Disconnected
+        is ConnectionState.Disconnected -> State.Disconnected(
+            onDisconnected = { navigator.goBack() }
+        )
 
-        is ConnectionState.Connecting -> Connecting(it.device.name)
+        is ConnectionState.Connecting -> Connecting(
+            deviceName = device.name
+        )
 
         is ConnectionState.Connected -> {
             bluetoothConnectionProvider.send(controllerState)

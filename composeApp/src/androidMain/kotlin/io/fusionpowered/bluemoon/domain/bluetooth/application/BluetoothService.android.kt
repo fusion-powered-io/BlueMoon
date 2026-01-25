@@ -1,7 +1,12 @@
 package io.fusionpowered.bluemoon.domain.bluetooth.application
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothAdapter.ACTION_DISCOVERY_FINISHED
+import android.bluetooth.BluetoothDevice.ACTION_BOND_STATE_CHANGED
+import android.bluetooth.BluetoothDevice.ACTION_FOUND
+import android.bluetooth.BluetoothDevice.BOND_BONDED
+import android.bluetooth.BluetoothDevice.BOND_NONE
+import android.bluetooth.BluetoothDevice.EXTRA_BOND_STATE
 import android.bluetooth.BluetoothDevice.EXTRA_DEVICE
 import android.bluetooth.BluetoothHidDevice
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings
@@ -36,9 +41,9 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
     private val manager = applicationContext.getSystemService(BluetoothManager::class.java)
     private val adapter = checkNotNull(manager.adapter)
 
-    var pairedAndroidDevices = mutableSetOf<AndroidBluetoothDevice>()
+    var scannedAndroidDevices = mutableSetOf<AndroidBluetoothDevice>()
 
-    final override val pairedDevicesFlow: StateFlow<Set<BluetoothDevice>>
+    final override val scannedDevicesFlow: StateFlow<Set<BluetoothDevice>>
         field = MutableStateFlow(emptySet())
 
 
@@ -79,11 +84,21 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
     )
 
     private val callback = object : BluetoothHidDevice.Callback() {
-        override fun onConnectionStateChanged(device: AndroidBluetoothDevice?, state: Int) {
-            if (state == BluetoothProfile.STATE_CONNECTED) {
-                connectedDevice = device
-            } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
-                connectedDevice = null
+        override fun onConnectionStateChanged(androidDevice: AndroidBluetoothDevice?, state: Int) {
+            val device = androidDevice
+                .takeIf { it != null }
+                ?.toBluetoothDevice()
+                ?: return
+
+            when (state) {
+                BluetoothProfile.STATE_CONNECTED -> {
+                    connectedDevice = androidDevice
+                    connectionStateFlow.update { ConnectionState.Connected(device) }
+                }
+                BluetoothProfile.STATE_DISCONNECTED -> {
+                    connectedDevice = null
+                    connectionStateFlow.update { ConnectionState.Disconnected }
+                }
             }
         }
     }
@@ -91,15 +106,26 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
     private val scanReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
-                AndroidBluetoothDevice.ACTION_FOUND -> intent.getParcelableExtra<AndroidBluetoothDevice>(EXTRA_DEVICE)
+                ACTION_FOUND -> intent.getParcelableExtra<AndroidBluetoothDevice>(EXTRA_DEVICE)
                     ?.takeIf { it.name != null }
                     ?.let {
-                        pairedAndroidDevices.add(it)
-                        pairedDevicesFlow.update { pairedDevices -> pairedDevices + it.toBluetoothDevice() }
+                        scannedAndroidDevices.add(it)
+                        scannedDevicesFlow.update { pairedDevices -> pairedDevices + it.toBluetoothDevice() }
                     }
 
-                BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+                ACTION_DISCOVERY_FINISHED -> {
                     logger.info("Bluetooth scanning finished")
+                }
+
+                ACTION_BOND_STATE_CHANGED -> {
+                    val device = intent.getParcelableExtra<AndroidBluetoothDevice>(EXTRA_DEVICE) ?: return
+                    val bondState = intent.getIntExtra(EXTRA_BOND_STATE, BOND_NONE)
+                    if (bondState != BOND_BONDED) return
+                    when (val connectionState = connectionStateFlow.value) {
+                        is ConnectionState.Connecting if connectionState.device.mac == device.address -> hidDevice?.connect(device)
+                        else -> { /* Do nothing */
+                        }
+                    }
                 }
             }
         }
@@ -124,8 +150,8 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
 
         // 3. Register Receiver for Scanning
         val filter = IntentFilter().apply {
-            addAction(AndroidBluetoothDevice.ACTION_FOUND)
-            addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+            addAction(ACTION_FOUND)
+            addAction(ACTION_DISCOVERY_FINISHED)
         }
         applicationContext.registerReceiver(scanReceiver, filter)
     }
@@ -133,8 +159,8 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
     // --- Scanning Logic ---
 
     override fun startScanning() {
-        pairedAndroidDevices.clear()
-        pairedDevicesFlow.update { emptySet() }
+        scannedAndroidDevices.clear()
+        scannedDevicesFlow.update { emptySet() }
         if (adapter.isDiscovering) adapter.cancelDiscovery()
         adapter.startDiscovery()
     }
@@ -143,16 +169,25 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
     // --- Connection Logic ---
 
     override fun connect(device: BluetoothDevice) {
-        connectionStateFlow.update { ConnectionState.Connecting(device) }
         adapter.cancelDiscovery()
-        // Most hosts require the device to be bonded first for HID
-        val androidDevice = pairedAndroidDevices.find { it.address == device.mac }
-        if (androidDevice!!.bondState == AndroidBluetoothDevice.BOND_NONE) {
-            androidDevice.createBond()
-        } else {
-            hidDevice?.connect(androidDevice)
-            connectionStateFlow.update { ConnectionState.Connected(device) }
-        }
+        connectionStateFlow.update { ConnectionState.Connecting(device) }
+        scannedAndroidDevices.find { it.address == device.mac }
+            ?.let { androidDevice ->
+                if (androidDevice.bondState == BOND_NONE) {
+                    androidDevice.createBond()
+                } else {
+                    hidDevice?.connect(androidDevice)
+                }
+            }
+
+    }
+
+    override fun disconnect() {
+        if (connectedDevice == null) return
+
+        hidDevice?.disconnect(connectedDevice)
+
+        connectedDevice = null
     }
 
 

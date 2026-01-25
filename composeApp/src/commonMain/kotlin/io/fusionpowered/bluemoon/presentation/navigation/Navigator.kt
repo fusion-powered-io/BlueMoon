@@ -18,12 +18,12 @@ class Navigator(
     }
 
     fun goBack() {
-        if (backStack.isEmpty()) {
+        if (backStack.size <= 1) {
             logger.info("Tried navigating back, but nowhere to go")
             return
         }
-        val destination = backStack.removeLastOrNull()
-        logger.info("Navigating back to ${destination!!::class.simpleName}")
+        backStack.removeLastOrNull()
+        logger.info("Navigating back to ${backStack.last()::class.simpleName}")
     }
 
 }

@@ -9,7 +9,9 @@ data class ControllerModeScreen(val device: BluetoothDevice) {
 
     sealed interface State {
 
-        data object Disconnected : State
+        data class Disconnected(
+            val onDisconnected: () -> Unit
+        ) : State
 
         data class Connecting(
             val deviceName: String
