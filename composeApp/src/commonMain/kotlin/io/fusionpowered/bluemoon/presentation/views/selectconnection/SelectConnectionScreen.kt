@@ -8,10 +8,11 @@ data object SelectConnectionScreen {
 
     sealed interface State {
 
-        data object NoPairedDevices : State
+        data object NoDevices : State
 
         data class ShowingDiscoveredDevices(
-            val bluetoothDevices: Set<BluetoothDevice> = emptySet(),
+            val savedDevices: Set<BluetoothDevice> = emptySet(),
+            val scannedDevices: Set<BluetoothDevice> = emptySet(),
             val onDeviceClicked: (bluetoothDevice: BluetoothDevice) -> Unit = {},
         ) : State
 

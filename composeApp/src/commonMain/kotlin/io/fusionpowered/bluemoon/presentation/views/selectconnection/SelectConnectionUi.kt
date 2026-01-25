@@ -26,7 +26,7 @@ fun SelectConnectionUi(
     state: State,
 ) {
     when (state) {
-        is State.NoPairedDevices -> {
+        is State.NoDevices -> {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
@@ -41,13 +41,10 @@ fun SelectConnectionUi(
 
         is State.ShowingDiscoveredDevices -> {
             Column(
-                modifier = Modifier
-                    .safeContentPadding()
-                    .fillMaxSize(),
+                modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text("Select Connection")
-
                 Column(
                     modifier = Modifier
                         .padding(56.dp)
@@ -56,13 +53,23 @@ fun SelectConnectionUi(
                     verticalArrangement = spacedBy(24.dp, alignment = Alignment.Top),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    for (device in state.bluetoothDevices) {
+                    Text("Saved Devices")
+                    for (device in state.savedDevices) {
                         Button(
                             onClick = { state.onDeviceClicked(device) },
                         ) {
                             Column {
-                                Text("Name: ${device.name}")
-                                Text("Mac: ${device.mac}")
+                                Text(device.name)
+                            }
+                        }
+                    }
+                    Text("Scanned Devices")
+                    for (device in state.scannedDevices) {
+                        Button(
+                            onClick = { state.onDeviceClicked(device) },
+                        ) {
+                            Column {
+                                Text(device.name)
                             }
                         }
                     }
@@ -77,13 +84,19 @@ fun SelectConnectionUi(
 fun SelectConnectionUiPreview() {
     SelectConnectionUi(
         state = State.ShowingDiscoveredDevices(
-            bluetoothDevices = setOf(
+            savedDevices = setOf(
                 BluetoothDevice(
                     name = "test device 1",
                     mac = "00:00:00:00:00:01"
-                ),
+                )
+            ),
+            scannedDevices = setOf(
                 BluetoothDevice(
                     name = "test device 2",
+                    mac = "00:00:00:00:00:01"
+                ),
+                BluetoothDevice(
+                    name = "test device 3",
                     mac = "00:00:00:00:00:02"
                 )
             )

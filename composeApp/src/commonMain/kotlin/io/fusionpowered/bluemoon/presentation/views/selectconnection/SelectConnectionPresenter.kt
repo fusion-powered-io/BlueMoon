@@ -19,12 +19,14 @@ fun presentSelectConnection(
     LaunchedEffect(Unit) {
         bluetoothConnectionProvider.startScanning()
     }
-    val pairedDevices by bluetoothConnectionProvider.scannedDevicesFlow.collectAsStateWithLifecycle(emptySet())
+    val savedDevices by bluetoothConnectionProvider.savedDevicesFlow.collectAsStateWithLifecycle(emptySet())
+    val scannedDevices by bluetoothConnectionProvider.scannedDevicesFlow.collectAsStateWithLifecycle(emptySet())
 
     return when {
-        pairedDevices.isEmpty() -> State.NoPairedDevices
+        scannedDevices.isEmpty() -> State.NoDevices
         else -> State.ShowingDiscoveredDevices(
-            bluetoothDevices = pairedDevices,
+            savedDevices = savedDevices,
+            scannedDevices = scannedDevices - savedDevices,
             onDeviceClicked = { device ->
                 navigator.navigateTo(ControllerModeScreen(device))
             }
