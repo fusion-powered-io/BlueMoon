@@ -62,55 +62,60 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
         "Fusion",
         BluetoothHidDevice.SUBCLASS1_COMBO,
         ubyteArrayOf(
-            0x05u, 0x01u,        // Usage Page (Generic Desktop)
-            0x09u, 0x05u,        // Usage (Game Pad)
-            0xA1u, 0x01u,        // Collection (Application)
+            0x05u, 0x01u,                       // Usage Page (Generic Desktop)
+            0x09u, 0x05u,                       // Usage (Game Pad)
+            0xA1u, 0x01u,                       // Collection (Application)
 
             // Sticks: X, Y, Z, Rz (4 x 16-bit)
-            0x05u, 0x01u,        //   Usage Page (Generic Desktop)
-            0x09u, 0x30u,        //   Usage (X)
-            0x09u, 0x31u,        //   Usage (Y)
-            0x09u, 0x32u,        //   Usage (Z) - often Right Stick X
-            0x09u, 0x35u,        //   Usage (Rz) - often Right Stick Y
-            0x15u, 0x00u,        //   Logical Minimum (0)
-            0x27u, 0xFFu, 0xFFu, 0x00u, 0x00u, // Logical Maximum (65535)
-            0x75u, 0x10u,        //   Report Size (16 bits)
-            0x95u, 0x04u,        //   Report Count (4 axes)
-            0x81u, 0x02u,        //   Input (Data, Variable, Absolute)
+            0x05u, 0x01u,                       //   Usage Page (Generic Desktop)
+            0x09u, 0x30u,                       //   Usage (X)
+            0x09u, 0x31u,                       //   Usage (Y)
+            0x09u, 0x32u,                       //   Usage (Z) - often Right Stick X
+            0x09u, 0x35u,                       //   Usage (Rz) - often Right Stick Y
+            0x15u, 0x00u,                       //   Logical Minimum (0)
+            0x27u, 0xFFu, 0xFFu, 0x00u, 0x00u,  // Logical Maximum (65535)
+            0x75u, 0x10u,                       //   Report Size (16 bits)
+            0x95u, 0x04u,                       //   Report Count (4 axes)
+            0x81u, 0x02u,                       //   Input (Data, Variable, Absolute)*/
 
-            // Buttons: 12 Buttons (12 bits)
-            0x05u, 0x09u,        //   Usage Page (Button)
-            0x19u, 0x01u,        //   Usage Minimum (Button 1)
-            0x29u, 0x0Cu,        //   Usage Maximum (Button 12)
-            0x15u, 0x00u,        //   Logical Minimum (0)
-            0x25u, 0x01u,        //   Logical Maximum (1)
-            0x75u, 0x01u,        //   Report Size (1)
-            0x95u, 0x0Cu,        //   Report Count (12)
-            0x81u, 0x02u,        //   Input (Data, Variable, Absolute)
+            // Triggers
+            0x05u, 0x02u,                       //     USAGE_PAGE (Simulation Control)
+            0x15u, 0x00u,                       //     LOGICAL_MINIMUM (0)
+            0x26u, 0xFFu, 0x00u,                //     LOGICAL_MAXIMUM (255)
+            0x09u, 0xC4u,                       //     USAGE(Acceleration)
+            0x09u, 0xC5u,                       //     USAGE(Brake)
+            0x75u, 0x08u,                       //     REPORT_SIZE (8)
+            0x95u, 0x02u,                       //     REPORT_COUNT (2)
+            0x81u, 0x02u,                       //     INPUT (Data,Var,Abs)
 
-            // Padding: 4 bits to finish the 2nd button byte
-            0x75u, 0x01u,        //   Report Size (1)
-            0x95u, 0x04u,        //   Report Count (4)
-            0x81u, 0x03u,        //   Input (Constant, Variable, Absolute)
+            // Buttons: 16 Buttons (16 bits)
+            0x05u, 0x09u,                       //   Usage Page (Button)
+            0x19u, 0x01u,                       //   Usage Minimum (Button 1)
+            0x29u, 0x10u,                       //   Usage Maximum (Button 16)
+            0x15u, 0x00u,                       //   Logical Minimum (0)
+            0x25u, 0x01u,                       //   Logical Maximum (1)
+            0x95u, 0x10u,                       //   Report Count (16)
+            0x75u, 0x01u,                       //   Report Size (1)
+            0x81u, 0x02u,                       //   Input (Data, Variable, Absolute)
 
             // Hat Switch (4 bits)
-            0x05u, 0x01u,        //   Usage Page (Generic Desktop)
-            0x09u, 0x39u,        //   Usage (Hat Switch)
-            0x15u, 0x01u,        //   Logical Minimum (1)
-            0x25u, 0x08u,        //   Logical Maximum (8)
-            0x35u, 0x00u,        //   Physical Minimum (0)
-            0x46u, 0x3Bu, 0x01u, //   Physical Maximum (315) - for degrees
-            0x66u, 0x14u, 0x00u, //   Unit (English Rotation: Degrees)
-            0x75u, 0x04u,        //   Report Size (4 bits)
-            0x95u, 0x01u,        //   Report Count (1)
-            0x81u, 0x42u,        //   Input (Data, Variable, Absolute, Null State)
+            0x05u, 0x01u,                       //   Usage Page (Generic Desktop)
+            0x09u, 0x39u,                       //   Usage (Hat Switch)
+            0x15u, 0x01u,                       //   Logical Minimum (1)
+            0x25u, 0x08u,                       //   Logical Maximum (8)
+            0x35u, 0x00u,                       //   Physical Minimum (0)
+            0x46u, 0x3Bu, 0x01u,                //   Physical Maximum (315) - for degrees
+            0x66u, 0x14u, 0x00u,                //   Unit (English Rotation: Degrees)
+            0x75u, 0x04u,                       //   Report Size (4 bits)
+            0x95u, 0x01u,                       //   Report Count (1)
+            0x81u, 0x42u,                       //   Input (Data, Variable, Absolute, Null State)
 
             // Final Padding: 4 bits to finish the final byte
-            0x75u, 0x04u,        //   Report Size (4)
-            0x95u, 0x01u,        //   Report Count (1)
-            0x81u, 0x03u,        //   Input (Constant, Variable, Absolute)
+            0x75u, 0x04u,                       //   Report Size (4)
+            0x95u, 0x01u,                       //   Report Count (1)
+            0x81u, 0x03u,                       //   Input (Constant, Variable, Absolute)
 
-            0xC0u                // End Collection
+            0xC0u                               // End Collection
         ).toByteArray()
     )
 
@@ -126,6 +131,7 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
                     connectedDevice = androidDevice
                     connectionStateFlow.update { ConnectionState.Connected(device) }
                 }
+
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     connectedDevice = null
                     connectionStateFlow.update { ConnectionState.Disconnected }
@@ -225,90 +231,78 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
     }
 
     override fun send(controllerState: ControllerState) {
-        // Total size is 12 bytes based on the aligned descriptor:
-        // Sticks (8) + Buttons (2) + Hat/Padding (1) + Extra Padding (1)
-        val reportData = ByteArray(12)
+        // stickBytes(8) + triggerBytes(2) + buttonBytes(2) + hatBytes(1) + paddingBytes(1)
+        val reportData = ByteArray(14)
 
-        // Sticks (Bytes 0-7): X, Y, Z, Rz (4 x 16-bit)
-        // Most games map L-Stick to X/Y and R-Stick to Z/Rz
-        val lsX = mapStick16(controllerState.leftStickX)
-        val lsY = mapStick16(controllerState.leftStickY)
-        val rsX = mapStick16(controllerState.rightStickX)
-        val rsY = mapStick16(controllerState.rightStickY)
+        controllerState.leftStickX.to16bit().let {
+            reportData[0] = (it and 0xFF).toByte()
+            reportData[1] = ((it shr 8) and 0xFF).toByte()
+        }
+        controllerState.leftStickY.to16bit().let {
+            reportData[2] = (it and 0xFF).toByte()
+            reportData[3] = ((it shr 8) and 0xFF).toByte()
+        }
+        controllerState.rightStickX.to16bit().let {
+            reportData[4] = (it and 0xFF).toByte()
+            reportData[5] = ((it shr 8) and 0xFF).toByte()
+        }
+        controllerState.rightStickY.to16bit().let {
+            reportData[6] = (it and 0xFF).toByte()
+            reportData[7] = ((it shr 8) and 0xFF).toByte()
+        }
 
-        reportData[0] = (lsX and 0xFF).toByte()
-        reportData[1] = ((lsX shr 8) and 0xFF).toByte()
-        reportData[2] = (lsY and 0xFF).toByte()
-        reportData[3] = ((lsY shr 8) and 0xFF).toByte()
-        reportData[4] = (rsX and 0xFF).toByte()
-        reportData[5] = ((rsX shr 8) and 0xFF).toByte()
-        reportData[6] = (rsY and 0xFF).toByte()
-        reportData[7] = ((rsY shr 8) and 0xFF).toByte()
+        reportData[8] = controllerState.r2.to8bit().toByte()
+        reportData[9] = controllerState.l2.to8bit().toByte()
 
-        // Byte 8: Buttons 1-8
-        var b1 = 0
-        if (controllerState.a) b1 = b1 or (1 shl 0)
-        if (controllerState.b) b1 = b1 or (1 shl 1)
-        //if (controllerState.x) b1 = b1 or (1 shl 2) Doesn't seem to be used
-        if (controllerState.x) b1 = b1 or (1 shl 3)
-        if (controllerState.y) b1 = b1 or (1 shl 4)
-        // if (controllerState.r1) b1 = b1 or (1 shl 5) Doesn't seem to be used
-        if (controllerState.l1) b1 = b1 or (1 shl 6)
-        if (controllerState.r1) b1 = b1 or (1 shl 7)
-        reportData[8] = b1.toByte()
+        reportData[10] = controllerState.run {
+            var buttons = 0
+            if (a) buttons = buttons or (1 shl 0)
+            if (b) buttons = buttons or (1 shl 1)
+            if (x) buttons = buttons or (1 shl 3)
+            if (y) buttons = buttons or (1 shl 4)
+            if (l1) buttons = buttons or (1 shl 6)
+            if (r1) buttons = buttons or (1 shl 7)
+            buttons.toByte()
+        }
+        reportData[11] = controllerState.run {
+            var buttons = 0
+            if (l3) buttons = buttons or (1 shl 0)
+            if (l3) buttons = buttons or (1 shl 1)
+            if (select) buttons = buttons or (1 shl 2)
+            if (start) buttons = buttons or (1 shl 3)
+            if (guide) buttons = buttons or (1 shl 4)
+            buttons.toByte()
+        }
 
-        // Byte 9: Buttons 9-12
-        var b2 = 0
-        // if (controllerState.select) b2 = b2 or (1 shl 0) Doesn't seem to be used
-        // if (controllerState.start) b2 = b2 or (1 shl 1) Doesn't seem to be used
-        if (controllerState.select) b2 = b2 or (1 shl 2)
-        if (controllerState.start) b2 = b2 or (1 shl 3)
-        // Recommended slots for the remaining controls:
-        if (controllerState.r3)     b2 = b2 or (1 shl 5) // Bit 5
-        if (controllerState.guide)  b2 = b2 or (1 shl 6) // Bit 6
-        if (controllerState.l3)     b2 = b2 or (1 shl 7) // Bit 4
-        // Bits 4-7 are padding (Constant)
-        reportData[9] = b2.toByte()
+        reportData[12] = controllerState.run {
+            val up = dpadY < -0.5f
+            val down = dpadY > 0.5f
+            val left = dpadX < -0.5f
+            val right = dpadX > 0.5f
+            val hat = when {
+                up && !left && !right -> 1    // North
+                up && right -> 2              // North-East
+                right && !up && !down -> 3    // East
+                down && right -> 4            // South-East
+                down && !left && !right -> 5  // South
+                down && left -> 6             // South-West
+                left && !up && !down -> 7     // West
+                up && left -> 8               // North-West
+                else -> 0                     // Center / Released
+            }
+            (hat and 0x0F).toByte()
+        }
 
-        // Byte 10: Hat Switch (Bits 0-3) + Padding (Bits 4-7)
-        val hatValue = calculateHat(controllerState.dpadX, controllerState.dpadY)
-        // Ensure hat is only 4 bits and doesn't bleed into padding
-        reportData[10] = (hatValue and 0x0F).toByte()
-
-        // Byte 11: Extra Padding byte
-        // Required to ensure the report matches the descriptor's expected length
-        reportData[11] = 0x00.toByte()
+        //Extra Padding byte
+        reportData[13] = 0x00.toByte()
 
         hidDevice?.sendReport(connectedDevice, 0, reportData)
     }
 
-    /**
-     * Maps float -1.0..1.0 to 16-bit 0..65535
-     */
-    private fun mapStick16(value: Float): Int {
-        return (((value.coerceIn(-1f, 1f) + 1f) / 2f) * 65535).toInt()
-    }
+    private fun Float.to16bit(): Int =
+        (((coerceIn(-1f, 1f) + 1f) / 2f) * 65535).toInt()
 
-    /**
-     * Converts D-Pad floats to HID Hat Switch values (1-8, 0=Null)
-     */
-    private fun calculateHat(x: Float, y: Float): Int {
-        val up = y < -0.5f
-        val down = y > 0.5f
-        val left = x < -0.5f
-        val right = x > 0.5f
-
-        return when {
-            up && !left && !right -> 1    // North
-            up && right -> 2              // North-East
-            right && !up && !down -> 3    // East
-            down && right -> 4            // South-East
-            down && !left && !right -> 5  // South
-            down && left -> 6             // South-West
-            left && !up && !down -> 7     // West
-            up && left -> 8               // North-West
-            else -> 0                     // Center / Released
-        }
-    }
+    private fun Float.to8bit(): Int =
+        (coerceIn(0f, 1f) * 255).toInt()
 
 }
