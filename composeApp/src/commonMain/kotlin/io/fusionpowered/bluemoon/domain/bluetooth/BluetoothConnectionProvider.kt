@@ -15,9 +15,9 @@ interface BluetoothConnectionProvider {
 
     fun connect(device: BluetoothDevice)
 
-    fun disconnect()
+    fun disconnect(device: BluetoothDevice)
 
-    fun send(controllerState: ControllerState)
+    fun send(device: BluetoothDevice, controllerState: ControllerState)
 
     fun startScanning()
 

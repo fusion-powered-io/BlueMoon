@@ -41,7 +41,7 @@ fun presentControllerMode(
         if (controllerState.guide) {
             countdownJob = launch {
                 delay(3.seconds)
-                bluetoothConnectionProvider.disconnect()
+                bluetoothConnectionProvider.disconnect(device)
             }
         } else {
             countdownJob?.cancel()
@@ -59,7 +59,7 @@ fun presentControllerMode(
         )
 
         is ConnectionState.Connected -> {
-            bluetoothConnectionProvider.send(controllerState)
+            bluetoothConnectionProvider.send(device, controllerState)
             Connected(
                 deviceName = it.device.name,
                 controllerState = controllerState

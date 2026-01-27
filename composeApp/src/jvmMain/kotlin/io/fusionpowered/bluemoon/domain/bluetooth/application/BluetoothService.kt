@@ -31,11 +31,11 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
         logger.info("Tried to connect to ${device.name}")
     }
 
-    override fun disconnect() {
+    override fun disconnect(device: BluetoothDevice) {
 
     }
 
-    override fun send(controllerState: ControllerState) {
+    override fun send(device: BluetoothDevice, controllerState: ControllerState) {
         logger.info(controllerState.toString())
     }
 

@@ -12,6 +12,7 @@ import android.bluetooth.BluetoothHidDevice
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothProfile.HID_DEVICE
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -53,7 +54,6 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
         field = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
 
     private var hidDevice: BluetoothHidDevice? = null
-    private var connectedDevice: AndroidBluetoothDevice? = null
 
     @OptIn(ExperimentalUnsignedTypes::class)
     private val serviceDiscoveryProtocolSettings = BluetoothHidDeviceAppSdpSettings(
@@ -119,82 +119,85 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
         ).toByteArray()
     )
 
-    private val callback = object : BluetoothHidDevice.Callback() {
-        override fun onConnectionStateChanged(androidDevice: AndroidBluetoothDevice?, state: Int) {
-            val device = androidDevice
-                .takeIf { it != null }
-                ?.toBluetoothDevice()
-                ?: return
+    init {
+        adapter.getProfileProxy(
+            applicationContext,
+            object : BluetoothProfile.ServiceListener {
 
-            when (state) {
-                BluetoothProfile.STATE_CONNECTED -> {
-                    connectedDevice = androidDevice
-                    connectionStateFlow.update { ConnectionState.Connected(device) }
-                }
+                override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
+                    if (profile == HID_DEVICE) {
+                        hidDevice = proxy as BluetoothHidDevice
+                        hidDevice?.registerApp(
+                            serviceDiscoveryProtocolSettings,
+                            null,
+                            null,
+                            Executors.newSingleThreadExecutor(),
+                            object : BluetoothHidDevice.Callback() {
 
-                BluetoothProfile.STATE_DISCONNECTED -> {
-                    connectedDevice = null
-                    connectionStateFlow.update { ConnectionState.Disconnected }
-                }
-            }
-        }
-    }
+                                override fun onConnectionStateChanged(androidDevice: AndroidBluetoothDevice?, state: Int) {
+                                    val device = androidDevice
+                                        .takeIf { it != null }
+                                        ?.toBluetoothDevice()
+                                        ?: return
 
-    private val scanReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            when (intent.action) {
-                ACTION_FOUND -> intent.getParcelableExtra<AndroidBluetoothDevice>(EXTRA_DEVICE)
-                    ?.takeIf { it.name != null }
-                    ?.let {
-                        scannedAndroidDevices.add(it)
-                        scannedDevicesFlow.update { scannedDevices -> scannedDevices + it.toBluetoothDevice() }
+                                    when (state) {
+                                        BluetoothProfile.STATE_CONNECTED -> {
+                                            connectionStateFlow.update { ConnectionState.Connected(device) }
+                                        }
+
+                                        BluetoothProfile.STATE_DISCONNECTED -> {
+                                            connectionStateFlow.update { ConnectionState.Disconnected }
+                                        }
+                                    }
+                                }
+
+                            }
+                        )
                     }
-
-                ACTION_DISCOVERY_FINISHED -> {
-                    logger.info("Bluetooth scanning finished")
                 }
 
-                ACTION_BOND_STATE_CHANGED -> {
-                    val device = intent.getParcelableExtra<AndroidBluetoothDevice>(EXTRA_DEVICE) ?: return
-                    val bondState = intent.getIntExtra(EXTRA_BOND_STATE, BOND_NONE)
-                    if (bondState != BOND_BONDED) return
-                    savedDevicesFlow.update { it + device.toBluetoothDevice() }
-                    when (val connectionState = connectionStateFlow.value) {
-                        is ConnectionState.Connecting if connectionState.device.mac == device.address -> hidDevice?.connect(device)
-                        else -> { /* Do nothing */
+                override fun onServiceDisconnected(profile: Int) {
+                    if (profile == HID_DEVICE) hidDevice = null
+                }
+
+            },
+            HID_DEVICE
+        )
+        applicationContext.registerReceiver(
+            object : BroadcastReceiver() {
+                override fun onReceive(context: Context, intent: Intent) {
+                    when (intent.action) {
+                        ACTION_FOUND -> intent.getParcelableExtra<AndroidBluetoothDevice>(EXTRA_DEVICE)
+                            ?.takeIf { it.name != null }
+                            ?.let {
+                                scannedAndroidDevices.add(it)
+                                scannedDevicesFlow.update { scannedDevices -> scannedDevices + it.toBluetoothDevice() }
+                            }
+
+                        ACTION_DISCOVERY_FINISHED -> {
+                            logger.info("Bluetooth scanning finished")
+                        }
+
+                        ACTION_BOND_STATE_CHANGED -> {
+                            val device = intent.getParcelableExtra<AndroidBluetoothDevice>(EXTRA_DEVICE) ?: return
+                            val bondState = intent.getIntExtra(EXTRA_BOND_STATE, BOND_NONE)
+                            if (bondState != BOND_BONDED) return
+                            savedDevicesFlow.update { it + device.toBluetoothDevice() }
+                            when (val connectionState = connectionStateFlow.value) {
+                                is ConnectionState.Connecting if connectionState.device.mac == device.address -> hidDevice?.connect(device)
+                                else -> { /* Do nothing */
+                                }
+                            }
                         }
                     }
                 }
+            },
+            IntentFilter().apply {
+                addAction(ACTION_FOUND)
+                addAction(ACTION_DISCOVERY_FINISHED)
             }
-        }
+        )
     }
-
-    init {
-        // 1. Initialize the HID Profile Proxy
-        adapter.getProfileProxy(applicationContext, object : BluetoothProfile.ServiceListener {
-            override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
-                if (profile == BluetoothProfile.HID_DEVICE) {
-                    hidDevice = proxy as BluetoothHidDevice
-                    // 2. Register our Gamepad with the Bluetooth Stack
-                    val executor = Executors.newSingleThreadExecutor()
-                    hidDevice?.registerApp(serviceDiscoveryProtocolSettings, null, null, executor, callback)
-                }
-            }
-
-            override fun onServiceDisconnected(profile: Int) {
-                if (profile == BluetoothProfile.HID_DEVICE) hidDevice = null
-            }
-        }, BluetoothProfile.HID_DEVICE)
-
-        // 3. Register Receiver for Scanning
-        val filter = IntentFilter().apply {
-            addAction(ACTION_FOUND)
-            addAction(ACTION_DISCOVERY_FINISHED)
-        }
-        applicationContext.registerReceiver(scanReceiver, filter)
-    }
-
-    // --- Scanning Logic ---
 
     override fun startScanning() {
         scannedAndroidDevices.clear()
@@ -203,13 +206,19 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
         adapter.startDiscovery()
     }
 
-
-    // --- Connection Logic ---
-
     override fun connect(device: BluetoothDevice) {
         adapter.cancelDiscovery()
         connectionStateFlow.update { ConnectionState.Connecting(device) }
-        scannedAndroidDevices.find { it.address == device.mac }
+
+        hidDevice?.connectedDevices
+            ?.find { it.address == device.mac }
+            ?.let {
+                connectionStateFlow.update { ConnectionState.Connected(device) }
+                return
+            }
+
+        scannedAndroidDevices
+            .find { it.address == device.mac }
             ?.let { androidDevice ->
                 if (androidDevice.bondState == BOND_NONE) {
                     androidDevice.createBond()
@@ -220,17 +229,18 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
 
     }
 
-    override fun disconnect() {
-        if (connectedDevice == null) {
-            connectionStateFlow.update { ConnectionState.Disconnected }
-        }
-
-        hidDevice?.disconnect(connectedDevice)
-
-        connectedDevice = null
+    override fun disconnect(device: BluetoothDevice) {
+        hidDevice?.connectedDevices
+            ?.find { it.address == device.mac }
+            ?.let { androidDevice ->
+                hidDevice?.disconnect(androidDevice)
+            }
+        connectionStateFlow.update { ConnectionState.Disconnected }
     }
 
-    override fun send(controllerState: ControllerState) {
+    override fun send(device: BluetoothDevice, controllerState: ControllerState) {
+        val androidDevice = hidDevice?.connectedDevices?.find { it.address == device.mac } ?: return
+
         // stickBytes(8) + triggerBytes(2) + buttonBytes(2) + hatBytes(1) + paddingBytes(1)
         val reportData = ByteArray(14)
 
@@ -267,7 +277,7 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
         reportData[11] = controllerState.run {
             var buttons = 0
             if (l3) buttons = buttons or (1 shl 0)
-            if (l3) buttons = buttons or (1 shl 1)
+            if (r3) buttons = buttons or (1 shl 1)
             if (select) buttons = buttons or (1 shl 2)
             if (start) buttons = buttons or (1 shl 3)
             if (guide) buttons = buttons or (1 shl 4)
@@ -296,7 +306,7 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
         //Extra Padding byte
         reportData[13] = 0x00.toByte()
 
-        hidDevice?.sendReport(connectedDevice, 0, reportData)
+        hidDevice?.sendReport(androidDevice, 0, reportData)
     }
 
     private fun Float.to16bit(): Int =
