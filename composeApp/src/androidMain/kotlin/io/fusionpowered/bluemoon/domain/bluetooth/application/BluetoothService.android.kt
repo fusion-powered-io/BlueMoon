@@ -1,21 +1,29 @@
 package io.fusionpowered.bluemoon.domain.bluetooth.application
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter.ACTION_DISCOVERY_FINISHED
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice.ACTION_BOND_STATE_CHANGED
 import android.bluetooth.BluetoothDevice.ACTION_FOUND
 import android.bluetooth.BluetoothDevice.BOND_BONDED
 import android.bluetooth.BluetoothDevice.BOND_NONE
 import android.bluetooth.BluetoothDevice.EXTRA_BOND_STATE
 import android.bluetooth.BluetoothDevice.EXTRA_DEVICE
-import android.bluetooth.BluetoothHidDevice
-import android.bluetooth.BluetoothHidDeviceAppSdpSettings
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
+import android.bluetooth.BluetoothGattServer
+import android.bluetooth.BluetoothGattServerCallback
+import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.le.AdvertiseCallback
+import android.bluetooth.le.AdvertiseData
+import android.bluetooth.le.AdvertiseSettings
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.ParcelUuid
 import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothConnectionProvider
 import io.fusionpowered.bluemoon.domain.bluetooth.mapper.toBluetoothDevice
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
@@ -28,7 +36,20 @@ import org.koin.core.annotation.Single
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.logger.Logger
-import java.util.concurrent.Executors
+import java.util.UUID
+import kotlin.Boolean
+import kotlin.ByteArray
+import kotlin.Float
+import kotlin.Int
+import kotlin.apply
+import kotlin.byteArrayOf
+import kotlin.checkNotNull
+import kotlin.collections.plus
+import kotlin.getValue
+import kotlin.let
+import kotlin.run
+import kotlin.takeIf
+import kotlin.ubyteArrayOf
 
 private typealias AndroidBluetoothDevice = android.bluetooth.BluetoothDevice
 
@@ -36,32 +57,9 @@ private typealias AndroidBluetoothDevice = android.bluetooth.BluetoothDevice
 @Single
 actual class BluetoothService actual constructor() : KoinComponent, BluetoothConnectionProvider {
 
-    private val applicationContext by inject<Context>()
-    private val logger by inject<Logger>()
-    private val manager = applicationContext.getSystemService(BluetoothManager::class.java)
-    private val adapter = checkNotNull(manager.adapter)
+    companion object {
 
-    var scannedAndroidDevices = mutableSetOf<AndroidBluetoothDevice>()
-
-    final override val savedDevicesFlow: StateFlow<Set<BluetoothDevice>>
-        field = MutableStateFlow(adapter.bondedDevices.map { it.toBluetoothDevice() }.toSet())
-
-    final override val scannedDevicesFlow: StateFlow<Set<BluetoothDevice>>
-        field = MutableStateFlow(emptySet())
-
-    final override val connectionStateFlow: StateFlow<ConnectionState>
-        field = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
-
-    private var hidDevice: BluetoothHidDevice? = null
-    private var connectedDevice: AndroidBluetoothDevice? = null
-
-    @OptIn(ExperimentalUnsignedTypes::class)
-    private val serviceDiscoveryProtocolSettings = BluetoothHidDeviceAppSdpSettings(
-        "BlueMoon Gamepad",
-        "BlueMoon HID Controller",
-        "Fusion",
-        BluetoothHidDevice.SUBCLASS2_GAMEPAD,
-        ubyteArrayOf(
+        private val GAMEPAD_HID_DESCRIPTOR = ubyteArrayOf(
             0x05u, 0x01u,                       // Usage Page (Generic Desktop)
             0x09u, 0x05u,                       // Usage (Game Pad)
             0xA1u, 0x01u,                       // Collection (Application)
@@ -76,7 +74,7 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
             0x27u, 0xFFu, 0xFFu, 0x00u, 0x00u,  // Logical Maximum (65535)
             0x75u, 0x10u,                       //   Report Size (16 bits)
             0x95u, 0x04u,                       //   Report Count (4 axes)
-            0x81u, 0x02u,                       //   Input (Data, Variable, Absolute)*/
+            0x81u, 0x02u,                       //   Input (Data, Variable, Absolute)
 
             // Triggers
             0x05u, 0x02u,                       //     USAGE_PAGE (Simulation Control)
@@ -117,25 +115,91 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
 
             0xC0u                               // End Collection
         ).toByteArray()
-    )
 
-    private val callback = object : BluetoothHidDevice.Callback() {
-        override fun onConnectionStateChanged(androidDevice: AndroidBluetoothDevice?, state: Int) {
-            val device = androidDevice
-                .takeIf { it != null }
-                ?.toBluetoothDevice()
-                ?: return
+        private val HID_SERVICE_UUID = UUID.fromString("00001812-0000-1000-8000-00805f9b34fb")
+        private val DIS_SERVICE_UUID = UUID.fromString("0000180a-0000-1000-8000-00805f9b34fb")
+        private val PNP_ID_CHAR_UUID = UUID.fromString("00002a50-0000-1000-8000-00805f9b34fb")
+        private val REPORT_CHAR_UUID = UUID.fromString("00002a4d-0000-1000-8000-00805f9b34fb")
+        private val REPORT_MAP_CHAR_UUID = UUID.fromString("00002a4b-0000-1000-8000-00805f9b34fb")
 
-            when (state) {
-                BluetoothProfile.STATE_CONNECTED -> {
-                    connectedDevice = androidDevice
-                    connectionStateFlow.update { ConnectionState.Connected(device) }
+        // ➕ REQUIRED HID UUIDs
+        private val HID_INFO_UUID = UUID.fromString("00002a4a-0000-1000-8000-00805f9b34fb")
+        private val HID_CONTROL_POINT_UUID = UUID.fromString("00002a4c-0000-1000-8000-00805f9b34fb")
+        private val PROTOCOL_MODE_UUID = UUID.fromString("00002a4e-0000-1000-8000-00805f9b34fb")
+
+        private val CCCD_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+        private val REPORT_REF_UUID = UUID.fromString("00002908-0000-1000-8000-00805f9b34fb")
+    }
+
+    private val applicationContext by inject<Context>()
+    private val logger by inject<Logger>()
+    private val manager = applicationContext.getSystemService(BluetoothManager::class.java)
+    private val adapter = checkNotNull(manager.adapter)
+
+    var scannedAndroidDevices = mutableSetOf<AndroidBluetoothDevice>()
+
+    final override val savedDevicesFlow: StateFlow<Set<BluetoothDevice>>
+        field = MutableStateFlow(adapter.bondedDevices.map { it.toBluetoothDevice() }.toSet())
+
+    final override val scannedDevicesFlow: StateFlow<Set<BluetoothDevice>>
+        field = MutableStateFlow(emptySet())
+
+    final override val connectionStateFlow: StateFlow<ConnectionState>
+        field = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
+
+    private var gattServer: BluetoothGattServer? = null
+    private var connectedDevices: MutableSet<AndroidBluetoothDevice> = mutableSetOf()
+    private var inputReportCharacteristic: BluetoothGattCharacteristic? = null
+
+    private val gattServerCallback = object : BluetoothGattServerCallback() {
+        override fun onConnectionStateChange(device: AndroidBluetoothDevice, status: Int, newState: Int) {
+            if (newState == BluetoothProfile.STATE_CONNECTED) {
+                connectedDevices.add(device)
+                when (val state = connectionStateFlow.value) {
+                    is ConnectionState.Connecting if state.device.mac == device.address -> {
+                        connectionStateFlow.update { ConnectionState.Connected(device.toBluetoothDevice()) }
+                    }
+
+                    else -> {}
                 }
+            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                connectedDevices.removeIf { it.address == device.address }
+                connectionStateFlow.update { ConnectionState.Disconnected }
+            }
+        }
 
-                BluetoothProfile.STATE_DISCONNECTED -> {
-                    connectedDevice = null
-                    connectionStateFlow.update { ConnectionState.Disconnected }
-                }
+        override fun onCharacteristicReadRequest(
+            device: AndroidBluetoothDevice,
+            requestId: Int,
+            offset: Int,
+            characteristic: BluetoothGattCharacteristic
+        ) {
+            gattServer?.sendResponse(
+                device,
+                requestId,
+                BluetoothGatt.GATT_SUCCESS,
+                offset,
+                characteristic.value
+            )
+        }
+
+        override fun onDescriptorWriteRequest(
+            device: AndroidBluetoothDevice,
+            requestId: Int,
+            descriptor: BluetoothGattDescriptor,
+            preparedWrite: Boolean,
+            responseNeeded: Boolean,
+            offset: Int,
+            value: ByteArray,
+        ) {
+            if (responseNeeded) {
+                gattServer?.sendResponse(
+                    device,
+                    requestId,
+                    BluetoothGatt.GATT_SUCCESS,
+                    offset,
+                    value
+                )
             }
         }
     }
@@ -150,46 +214,81 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
                         scannedDevicesFlow.update { scannedDevices -> scannedDevices + it.toBluetoothDevice() }
                     }
 
-                ACTION_DISCOVERY_FINISHED -> {
-                    logger.info("Bluetooth scanning finished")
-                }
-
                 ACTION_BOND_STATE_CHANGED -> {
                     val device = intent.getParcelableExtra<AndroidBluetoothDevice>(EXTRA_DEVICE) ?: return
                     val bondState = intent.getIntExtra(EXTRA_BOND_STATE, BOND_NONE)
                     if (bondState != BOND_BONDED) return
                     savedDevicesFlow.update { it + device.toBluetoothDevice() }
-                    when (val connectionState = connectionStateFlow.value) {
-                        is ConnectionState.Connecting if connectionState.device.mac == device.address -> hidDevice?.connect(device)
-                        else -> { /* Do nothing */
-                        }
-                    }
                 }
             }
         }
     }
 
     init {
-        // 1. Initialize the HID Profile Proxy
-        adapter.getProfileProxy(applicationContext, object : BluetoothProfile.ServiceListener {
-            override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
-                if (profile == BluetoothProfile.HID_DEVICE) {
-                    hidDevice = proxy as BluetoothHidDevice
-                    // 2. Register our Gamepad with the Bluetooth Stack
-                    val executor = Executors.newSingleThreadExecutor()
-                    hidDevice?.registerApp(serviceDiscoveryProtocolSettings, null, null, executor, callback)
-                }
-            }
+        gattServer = manager.openGattServer(applicationContext, gattServerCallback)
 
-            override fun onServiceDisconnected(profile: Int) {
-                if (profile == BluetoothProfile.HID_DEVICE) hidDevice = null
-            }
-        }, BluetoothProfile.HID_DEVICE)
+        // 2. HID Service
+        val hidService = BluetoothGattService(HID_SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY)
 
-        // 3. Register Receiver for Scanning
+        // Report Map Characteristic (Descriptor)
+        val reportMapChar = BluetoothGattCharacteristic(
+            REPORT_MAP_CHAR_UUID,
+            BluetoothGattCharacteristic.PROPERTY_READ,
+            BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED
+        )
+        reportMapChar.value = GAMEPAD_HID_DESCRIPTOR
+
+        // Input Report Characteristic (The actual button data stream)
+        inputReportCharacteristic = BluetoothGattCharacteristic(
+            REPORT_CHAR_UUID,
+            BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+            BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED
+        )
+
+        // ➕ HID Information
+        val hidInfoChar = BluetoothGattCharacteristic(
+            HID_INFO_UUID,
+            BluetoothGattCharacteristic.PROPERTY_READ,
+            BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED
+        )
+        hidInfoChar.value = byteArrayOf(0x11, 0x01, 0x00, 0x03)
+
+        // ➕ Protocol Mode (Report)
+        val protocolModeChar = BluetoothGattCharacteristic(
+            PROTOCOL_MODE_UUID,
+            BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE,
+            BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED or BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED
+        )
+        protocolModeChar.value = byteArrayOf(0x01)
+
+        // ➕ Control Point
+        val controlPointChar = BluetoothGattCharacteristic(
+            HID_CONTROL_POINT_UUID,
+            BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE,
+            BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED
+        )
+
+        // ➕ CCCD
+        inputReportCharacteristic!!.addDescriptor(
+            BluetoothGattDescriptor(
+                CCCD_UUID,
+                BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED or BluetoothGattDescriptor.PERMISSION_WRITE_ENCRYPTED
+            )
+        )
+
+        hidService.addCharacteristic(hidInfoChar)
+        hidService.addCharacteristic(protocolModeChar)
+        hidService.addCharacteristic(controlPointChar)
+        hidService.addCharacteristic(reportMapChar)
+        hidService.addCharacteristic(inputReportCharacteristic)
+
+        gattServer?.addService(hidService)
+
+        // Handle bond changes
         val filter = IntentFilter().apply {
             addAction(ACTION_FOUND)
-            addAction(ACTION_DISCOVERY_FINISHED)
+            addAction(ACTION_BOND_STATE_CHANGED) // Updates savedDevicesFlow
+            addAction(BluetoothAdapter.ACTION_STATE_CHANGED)     // Detects if user toggles BT off
         }
         applicationContext.registerReceiver(scanReceiver, filter)
     }
@@ -197,42 +296,53 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
     // --- Scanning Logic ---
 
     override fun startScanning() {
-        scannedAndroidDevices.clear()
-        scannedDevicesFlow.update { emptySet() }
-        if (adapter.isDiscovering) adapter.cancelDiscovery()
-        adapter.startDiscovery()
+        val advertiser = adapter.bluetoothLeAdvertiser
+        val settings = AdvertiseSettings.Builder()
+            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+            .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
+            .setConnectable(true)
+            .setTimeout(0)
+            .build()
+
+        val data = AdvertiseData.Builder()
+            .addServiceUuid(ParcelUuid(HID_SERVICE_UUID))
+            .build()
+
+        val scanResponse = AdvertiseData.Builder()
+            .setIncludeDeviceName(true)
+            .build()
+
+        advertiser.startAdvertising(settings, data, scanResponse, object : AdvertiseCallback() {
+            override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
+                logger.info("Advertising started: Xbox One S spoof active")
+            }
+        })
+
+        savedDevicesFlow.update {
+            adapter.bondedDevices.map { it.toBluetoothDevice() }.toSet()
+        }
     }
 
 
     // --- Connection Logic ---
-
     override fun connect(device: BluetoothDevice) {
-        adapter.cancelDiscovery()
-        connectionStateFlow.update { ConnectionState.Connecting(device) }
-        scannedAndroidDevices.find { it.address == device.mac }
-            ?.let { androidDevice ->
-                if (androidDevice.bondState == BOND_NONE) {
-                    androidDevice.createBond()
-                } else {
-                    hidDevice?.connect(androidDevice)
-                }
-            }
-
+        if (connectedDevices.any { it.address == device.mac }) {
+            connectionStateFlow.update { ConnectionState.Connected(device) }
+        } else {
+            connectionStateFlow.update { ConnectionState.Connecting(device) }
+            scannedAndroidDevices
+                .firstOrNull { it.address == device.mac }
+                ?.createBond()
+        }
     }
 
     override fun disconnect() {
-        if (connectedDevice == null) {
-            connectionStateFlow.update { ConnectionState.Disconnected }
-        }
-
-        hidDevice?.disconnect(connectedDevice)
-
-        connectedDevice = null
+        connectionStateFlow.update { ConnectionState.Disconnected }
     }
 
     override fun send(controllerState: ControllerState) {
         // stickBytes(8) + triggerBytes(2) + buttonBytes(2) + hatBytes(1) + paddingBytes(1)
-        val reportData = ByteArray(14)
+        val reportData = ByteArray(13)
 
         controllerState.leftStickX.to16bit().let {
             reportData[0] = (it and 0xFF).toByte()
@@ -267,7 +377,7 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
         reportData[11] = controllerState.run {
             var buttons = 0
             if (l3) buttons = buttons or (1 shl 0)
-            if (l3) buttons = buttons or (1 shl 1)
+            if (r3) buttons = buttons or (1 shl 1)
             if (select) buttons = buttons or (1 shl 2)
             if (start) buttons = buttons or (1 shl 3)
             if (guide) buttons = buttons or (1 shl 4)
@@ -293,10 +403,10 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
             (hat and 0x0F).toByte()
         }
 
-        //Extra Padding byte
-        reportData[13] = 0x00.toByte()
-
-        hidDevice?.sendReport(connectedDevice, 0, reportData)
+        inputReportCharacteristic?.value = reportData
+        connectedDevices.forEach {
+            gattServer?.notifyCharacteristicChanged(it, inputReportCharacteristic, false)
+        }
     }
 
     private fun Float.to16bit(): Int =

@@ -3,12 +3,14 @@ package io.fusionpowered.bluemoon.presentation.views.selectconnection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothConnectionProvider
 import io.fusionpowered.bluemoon.presentation.navigation.Navigator
 import io.fusionpowered.bluemoon.presentation.views.controllermode.ControllerModeScreen
 import io.fusionpowered.bluemoon.presentation.views.selectconnection.SelectConnectionScreen.State
 import org.koin.compose.koinInject
+import org.koin.core.logger.Logger
 
 
 @Composable
@@ -23,7 +25,7 @@ fun presentSelectConnection(
     val scannedDevices by bluetoothConnectionProvider.scannedDevicesFlow.collectAsStateWithLifecycle(emptySet())
 
     return when {
-        scannedDevices.isEmpty() -> State.NoDevices
+        scannedDevices.isEmpty() && savedDevices.isEmpty() -> State.NoDevices
         else -> State.ShowingDiscoveredDevices(
             savedDevices = savedDevices,
             scannedDevices = scannedDevices - savedDevices,

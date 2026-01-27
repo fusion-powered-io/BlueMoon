@@ -14,6 +14,7 @@ kotlin {
 
     compilerOptions {
         optIn.addAll(
+            "kotlin.ExperimentalUnsignedTypes",
             "com.google.accompanist.permissions.ExperimentalPermissionsApi"
         )
         freeCompilerArgs.addAll(
