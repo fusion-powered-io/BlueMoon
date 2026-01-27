@@ -60,7 +60,7 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCon
         "BlueMoon Gamepad",
         "BlueMoon HID Controller",
         "Fusion",
-        BluetoothHidDevice.SUBCLASS1_COMBO,
+        BluetoothHidDevice.SUBCLASS2_GAMEPAD,
         ubyteArrayOf(
             0x05u, 0x01u,                       // Usage Page (Generic Desktop)
             0x09u, 0x05u,                       // Usage (Game Pad)
