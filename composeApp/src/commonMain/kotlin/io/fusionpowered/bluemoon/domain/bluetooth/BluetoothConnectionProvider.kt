@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface BluetoothConnectionProvider {
 
+    val savedDevicesFlow: StateFlow<Set<BluetoothDevice>>
+
     val scannedDevicesFlow: StateFlow<Set<BluetoothDevice>>
 
     val connectionStateFlow: StateFlow<ConnectionState>
