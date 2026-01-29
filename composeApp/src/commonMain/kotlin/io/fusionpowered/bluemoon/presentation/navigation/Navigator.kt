@@ -13,17 +13,17 @@ class Navigator(
     val backStack: SnapshotStateList<Any> = mutableStateListOf(SelectConnectionScreen)
 
     fun navigateTo(destination: Any) {
-        logger.info("Navigating to ${destination::class.simpleName}")
+        logger.debug("Navigating to ${destination::class.simpleName}")
         backStack.add(destination)
     }
 
     fun goBack() {
         if (backStack.size <= 1) {
-            logger.info("Tried navigating back, but nowhere to go")
+            logger.debug("Tried navigating back, but nowhere to go")
             return
         }
         backStack.removeLastOrNull()
-        logger.info("Navigating back to ${backStack.last()::class.simpleName}")
+        logger.debug("Navigating back to ${backStack.last()::class.simpleName}")
     }
 
 }

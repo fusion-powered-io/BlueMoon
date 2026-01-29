@@ -9,6 +9,7 @@ import io.fusionpowered.bluemoon.presentation.navigation.Navigator
 import io.fusionpowered.bluemoon.presentation.views.controllermode.ControllerModeScreen
 import io.fusionpowered.bluemoon.presentation.views.selectconnection.SelectConnectionScreen.State
 import org.koin.compose.koinInject
+import sun.util.locale.LocaleUtils.isEmpty
 
 
 @Composable
@@ -23,7 +24,7 @@ fun presentSelectConnection(
     val scannedDevices by bluetoothConnectionProvider.scannedDevicesFlow.collectAsStateWithLifecycle(emptySet())
 
     return when {
-        scannedDevices.isEmpty() -> State.NoDevices
+        (savedDevices + scannedDevices).isEmpty() -> State.NoDevices
         else -> State.ShowingDiscoveredDevices(
             savedDevices = savedDevices,
             scannedDevices = scannedDevices - savedDevices,

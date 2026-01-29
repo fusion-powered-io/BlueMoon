@@ -40,7 +40,7 @@ fun presentControllerMode(
     LaunchedEffect(controllerState.guide) {
         if (controllerState.guide) {
             countdownJob = launch {
-                delay(3.seconds)
+                delay(1.seconds)
                 bluetoothConnectionProvider.disconnect(device)
             }
         } else {

@@ -7,7 +7,9 @@ import android.view.KeyEvent.KEYCODE_BACK
 import android.view.KeyEvent.KEYCODE_BUTTON_A
 import android.view.KeyEvent.KEYCODE_BUTTON_B
 import android.view.KeyEvent.KEYCODE_BUTTON_L1
+import android.view.KeyEvent.KEYCODE_BUTTON_L2
 import android.view.KeyEvent.KEYCODE_BUTTON_R1
+import android.view.KeyEvent.KEYCODE_BUTTON_R2
 import android.view.KeyEvent.KEYCODE_BUTTON_SELECT
 import android.view.KeyEvent.KEYCODE_BUTTON_START
 import android.view.KeyEvent.KEYCODE_BUTTON_THUMBL
@@ -42,8 +44,8 @@ actual class ControllerService actual constructor() : ControllerStateProvider, K
             is MotionEvent -> {
                 controllerStateFlow.update { controllerState ->
                     controllerState.copy(
-                        r2 = input.getAxisValue(AXIS_GAS),
-                        l2 = input.getAxisValue(AXIS_BRAKE),
+                        r2Axis= input.getAxisValue(AXIS_GAS),
+                        l2Axis = input.getAxisValue(AXIS_BRAKE),
                         dpadX = input.getAxisValue(AXIS_HAT_X),
                         dpadY = input.getAxisValue(AXIS_HAT_Y),
                         leftStickX = input.getAxisValue(AXIS_X),
@@ -63,6 +65,8 @@ actual class ControllerService actual constructor() : ControllerStateProvider, K
                         KEYCODE_BUTTON_Y -> controllerState.copy(y = input.action == ACTION_DOWN)
                         KEYCODE_BUTTON_L1 -> controllerState.copy(l1 = input.action == ACTION_DOWN)
                         KEYCODE_BUTTON_R1 -> controllerState.copy(r1 = input.action == ACTION_DOWN)
+                        KEYCODE_BUTTON_L2 -> controllerState.copy(l2Button = input.action == ACTION_DOWN)
+                        KEYCODE_BUTTON_R2 -> controllerState.copy(r2Button = input.action == ACTION_DOWN)
                         KEYCODE_BUTTON_THUMBL -> controllerState.copy(l3 = input.action == ACTION_DOWN)
                         KEYCODE_BUTTON_THUMBR -> controllerState.copy(r3 = input.action == ACTION_DOWN)
                         KEYCODE_BUTTON_START -> controllerState.copy(start = input.action == ACTION_DOWN)
