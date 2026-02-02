@@ -10,5 +10,7 @@ private typealias AndroidBluetoothDevice = android.bluetooth.BluetoothDevice
 fun AndroidBluetoothDevice.toBluetoothDevice() =
     BluetoothDevice(
         name = name,
-        mac = address
+        mac = address,
+        majorClass = bluetoothClass.majorDeviceClass.toMajorClass()
     )
+

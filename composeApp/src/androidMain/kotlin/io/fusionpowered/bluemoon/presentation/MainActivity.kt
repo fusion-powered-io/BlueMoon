@@ -8,14 +8,13 @@ import android.os.Build.VERSION_CODES.S
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.MotionEvent
-import android.view.Window.FEATURE_NO_TITLE
-import android.view.WindowInsets.Type.navigationBars
-import android.view.WindowInsets.Type.statusBars
-import android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.SideEffect
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import io.fusionpowered.bluemoon.domain.controller.application.ControllerService
 import org.koin.android.ext.android.inject
@@ -38,10 +37,23 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun setFullscreen() {
-        enableEdgeToEdge()
-        requestWindowFeature(FEATURE_NO_TITLE)
-        window.insetsController?.hide(statusBars() or navigationBars())
-        window.addFlags(FLAG_LAYOUT_IN_SCREEN)
+        // 1. Force the layout to use the entire screen including under system bars
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // 2. Use the Compat controller for stable behavior across Android versions
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+
+        // Hide both status bars (top) and navigation bars (bottom)
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+
+        // 3. THE FIX: Set behavior to "Transient" so swipes don't resize the UI
+        // This allows the bars to float over the app then disappear automatically
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+
+        // 4. Handle the Notch/Camera Cutout (Crucial for horizontal touchpads)
+        window.attributes.layoutInDisplayCutoutMode =
+            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
     }
 
     override fun onGenericMotionEvent(event: MotionEvent?): Boolean {

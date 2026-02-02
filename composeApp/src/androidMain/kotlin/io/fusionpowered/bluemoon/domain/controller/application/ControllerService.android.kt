@@ -27,56 +27,70 @@ import android.view.MotionEvent.AXIS_Y
 import android.view.MotionEvent.AXIS_Z
 import io.fusionpowered.bluemoon.domain.controller.ControllerStateProvider
 import io.fusionpowered.bluemoon.domain.controller.model.ControllerState
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.stateIn
 import org.koin.core.annotation.Single
 import org.koin.core.component.KoinComponent
+import kotlin.time.Clock
 
 @Single
 actual class ControllerService actual constructor() : ControllerStateProvider, KoinComponent {
 
-    final override val controllerStateFlow: StateFlow<ControllerState>
-        field = MutableStateFlow<ControllerState>(ControllerState())
+    @Volatile
+    private var controllerState = ControllerState()
+
+    override val controllerStateFlow: StateFlow<ControllerState> = flow {
+        while (true) {
+            emit(controllerState.copy(id = Clock.System.now().toEpochMilliseconds()))
+            delay(4) // 250hz
+        }
+    }.stateIn(
+        scope = CoroutineScope(Dispatchers.Default),
+        started = SharingStarted.Eagerly,
+        initialValue = controllerState
+    )
 
     fun handle(input: InputEvent) {
         when (input) {
             is MotionEvent -> {
-                controllerStateFlow.update { controllerState ->
-                    controllerState.copy(
-                        r2Axis= input.getAxisValue(AXIS_GAS),
-                        l2Axis = input.getAxisValue(AXIS_BRAKE),
-                        dpadX = input.getAxisValue(AXIS_HAT_X),
-                        dpadY = input.getAxisValue(AXIS_HAT_Y),
-                        leftStickX = input.getAxisValue(AXIS_X),
-                        leftStickY = input.getAxisValue(AXIS_Y),
-                        rightStickX = input.getAxisValue(AXIS_Z),
-                        rightStickY = input.getAxisValue(AXIS_RZ),
-                    )
-                }
+                // Update the volatile raw state
+                controllerState = controllerState.copy(
+                    id = input.eventTime,
+                    r2Axis = input.getAxisValue(AXIS_GAS),
+                    l2Axis = input.getAxisValue(AXIS_BRAKE),
+                    dpadX = input.getAxisValue(AXIS_HAT_X),
+                    dpadY = input.getAxisValue(AXIS_HAT_Y),
+                    leftStickX = input.getAxisValue(AXIS_X),
+                    leftStickY = input.getAxisValue(AXIS_Y),
+                    rightStickX = input.getAxisValue(AXIS_Z),
+                    rightStickY = input.getAxisValue(AXIS_RZ),
+                )
             }
 
             is KeyEvent -> {
-                controllerStateFlow.update { controllerState ->
-                    when (input.keyCode) {
-                        KEYCODE_BUTTON_A -> controllerState.copy(a = input.action == ACTION_DOWN)
-                        KEYCODE_BUTTON_B -> controllerState.copy(b = input.action == ACTION_DOWN)
-                        KEYCODE_BUTTON_X -> controllerState.copy(x = input.action == ACTION_DOWN)
-                        KEYCODE_BUTTON_Y -> controllerState.copy(y = input.action == ACTION_DOWN)
-                        KEYCODE_BUTTON_L1 -> controllerState.copy(l1 = input.action == ACTION_DOWN)
-                        KEYCODE_BUTTON_R1 -> controllerState.copy(r1 = input.action == ACTION_DOWN)
-                        KEYCODE_BUTTON_L2 -> controllerState.copy(l2Button = input.action == ACTION_DOWN)
-                        KEYCODE_BUTTON_R2 -> controllerState.copy(r2Button = input.action == ACTION_DOWN)
-                        KEYCODE_BUTTON_THUMBL -> controllerState.copy(l3 = input.action == ACTION_DOWN)
-                        KEYCODE_BUTTON_THUMBR -> controllerState.copy(r3 = input.action == ACTION_DOWN)
-                        KEYCODE_BUTTON_START -> controllerState.copy(start = input.action == ACTION_DOWN)
-                        KEYCODE_BUTTON_SELECT -> controllerState.copy(select = input.action == ACTION_DOWN)
-                        KEYCODE_BACK -> controllerState.copy(guide = input.action == ACTION_DOWN)
-                        else -> controllerState
-                    }
+                val isDown = input.action == ACTION_DOWN
+                controllerState = when (input.keyCode) {
+                    KEYCODE_BUTTON_A -> controllerState.copy(a = isDown)
+                    KEYCODE_BUTTON_B -> controllerState.copy(b = isDown)
+                    KEYCODE_BUTTON_X -> controllerState.copy(x = isDown)
+                    KEYCODE_BUTTON_Y -> controllerState.copy(y = isDown)
+                    KEYCODE_BUTTON_L1 -> controllerState.copy(l1 = isDown)
+                    KEYCODE_BUTTON_R1 -> controllerState.copy(r1 = isDown)
+                    KEYCODE_BUTTON_L2 -> controllerState.copy(l2Button = isDown)
+                    KEYCODE_BUTTON_R2 -> controllerState.copy(r2Button = isDown)
+                    KEYCODE_BUTTON_THUMBL -> controllerState.copy(l3 = isDown)
+                    KEYCODE_BUTTON_THUMBR -> controllerState.copy(r3 = isDown)
+                    KEYCODE_BUTTON_START -> controllerState.copy(start = isDown)
+                    KEYCODE_BUTTON_SELECT -> controllerState.copy(select = isDown)
+                    KEYCODE_BACK -> controllerState.copy(guide = isDown)
+                    else -> controllerState
                 }
             }
         }
     }
-
 }

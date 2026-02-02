@@ -1,6 +1,9 @@
 package io.fusionpowered.bluemoon.domain.controller.model
 
+import kotlin.time.Clock
+
 data class ControllerState(
+    val id: Long = Clock.System.now().toEpochMilliseconds(),
     val a: Boolean = false,
     val b: Boolean = false,
     val x: Boolean = false,
@@ -13,8 +16,8 @@ data class ControllerState(
     val l1: Boolean = false,
     val r1: Boolean = false,
     // Input Expected: 0f (Released) to 1f (Pressed)
-    val l2Button : Boolean = false,
-    val r2Button : Boolean = false,
+    val l2Button: Boolean = false,
+    val r2Button: Boolean = false,
     val l2Axis: Float = 0f,
     val r2Axis: Float = 0f,
 
