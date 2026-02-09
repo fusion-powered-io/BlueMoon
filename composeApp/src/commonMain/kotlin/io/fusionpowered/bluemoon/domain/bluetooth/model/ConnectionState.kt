@@ -1,5 +1,6 @@
 package io.fusionpowered.bluemoon.domain.bluetooth.model
 
+
 sealed interface ConnectionState {
 
     data object Disconnected : ConnectionState

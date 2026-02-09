@@ -1,56 +1,59 @@
 package io.fusionpowered.bluemoon.presentation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.navigation3.ui.NavDisplay
+import io.fusionpowered.bluemoon.presentation.components.BlueMoonScaffold
+import io.fusionpowered.bluemoon.presentation.components.BluetoothController
+import io.fusionpowered.bluemoon.presentation.components.BluetoothKeyboard
+import io.fusionpowered.bluemoon.presentation.components.BluetoothTouchpad
 import io.fusionpowered.bluemoon.presentation.navigation.Navigator
 import io.fusionpowered.bluemoon.presentation.theme.BlueMoonTheme
-import io.fusionpowered.bluemoon.presentation.views.controllermode.ControllerModeScreen
-import io.fusionpowered.bluemoon.presentation.views.controllermode.ControllerModeUi
-import io.fusionpowered.bluemoon.presentation.views.controllermode.presentControllerMode
-import io.fusionpowered.bluemoon.presentation.views.selectconnection.SelectConnectionScreen
-import io.fusionpowered.bluemoon.presentation.views.selectconnection.SelectConnectionUi
-import io.fusionpowered.bluemoon.presentation.views.selectconnection.presentSelectConnection
+import io.fusionpowered.bluemoon.presentation.views.deviceselector.DeviceSelector
 import org.koin.compose.koinInject
 import org.koin.compose.module.rememberKoinModules
 import org.koin.compose.navigation3.koinEntryProvider
-import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.dsl.module
 import org.koin.dsl.navigation3.navigation
 
-@OptIn(KoinExperimentalAPI::class)
+
 @Composable
 fun UiEntryPoint(
-    navigator: Navigator = koinInject()
+    navigator: Navigator = koinInject(),
+    bluetoothControllerPresenter: @Composable () -> BluetoothController.State = { BluetoothController.present() },
+    deviceSelectorPresenter: @Composable () -> DeviceSelector.State = { DeviceSelector.present() },
+    bluemoonScaffoldPresenter: @Composable () -> BlueMoonScaffold.State = { BlueMoonScaffold.present() },
+    touchpadPresenter: @Composable () -> BluetoothTouchpad.State = { BluetoothTouchpad.present() },
+    keyboardPresenter: @Composable () -> BluetoothKeyboard.State = { BluetoothKeyboard.present() },
 ) =
     BlueMoonTheme {
-        rememberKoinModules {
-            listOf(
-                module {
-                    navigation<SelectConnectionScreen> { _ ->
-                        SelectConnectionUi(
-                            state = presentSelectConnection()
-                        )
-                    }
+        Surface {
+            bluetoothControllerPresenter()
 
-                    navigation<ControllerModeScreen> { screen ->
-                        ControllerModeUi(
-                            modifier = Modifier
-                                .background(color = Color.Black)
-                                .fillMaxSize(),
-                            state = presentControllerMode(screen.device)
-                        )
+            rememberKoinModules {
+                listOf(
+                    module {
+                        navigation<DeviceSelector.Screen> { _ ->
+                            DeviceSelector(
+                                presenter = deviceSelectorPresenter
+                            )
+                        }
                     }
-                }
-            )
+                )
+            }
+
+            BlueMoonScaffold(
+                presenter = bluemoonScaffoldPresenter,
+                touchpadPresenter = touchpadPresenter,
+                keyboardPresenter = keyboardPresenter
+            ) {
+                NavDisplay(
+                    backStack = navigator.backStack,
+                    entryProvider = koinEntryProvider(),
+                    onBack = { navigator.goBack() }
+                )
+            }
         }
-
-        NavDisplay(
-            backStack = navigator.backStack,
-            entryProvider = koinEntryProvider(),
-            onBack = { navigator.goBack() }
-        )
     }
+
+

@@ -2,7 +2,7 @@ package io.fusionpowered.bluemoon.presentation.navigation
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import io.fusionpowered.bluemoon.presentation.views.selectconnection.SelectConnectionScreen
+import io.fusionpowered.bluemoon.presentation.views.deviceselector.DeviceSelector
 import org.koin.core.annotation.Single
 import org.koin.core.logger.Logger
 
@@ -10,7 +10,7 @@ import org.koin.core.logger.Logger
 class Navigator(
     private val logger: Logger
 ) {
-    val backStack: SnapshotStateList<Any> = mutableStateListOf(SelectConnectionScreen)
+    val backStack: SnapshotStateList<Any> = mutableStateListOf(DeviceSelector.Screen)
 
     fun navigateTo(destination: Any) {
         logger.debug("Navigating to ${destination::class.simpleName}")

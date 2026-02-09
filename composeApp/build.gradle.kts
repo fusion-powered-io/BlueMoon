@@ -8,13 +8,17 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
 
     compilerOptions {
         optIn.addAll(
+            "org.koin.core.annotation.KoinExperimentalAPI",
             "kotlin.ExperimentalUnsignedTypes",
+            "androidx.compose.foundation.ExperimentalFoundationApi",
+            "androidx.compose.material3.ExperimentalMaterial3Api",
             "com.google.accompanist.permissions.ExperimentalPermissionsApi"
         )
         freeCompilerArgs.addAll(
@@ -35,12 +39,14 @@ kotlin {
     sourceSets {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.lifecycle.process)
             implementation(libs.koin.android)
             implementation(libs.accompanist.permissions)
         }
         commonMain.dependencies {
             implementation(libs.runtime)
             implementation(libs.foundation)
+            implementation(libs.kotlinx.serialization.json)
             implementation(libs.ui)
             implementation(libs.components.resources)
             implementation(libs.ui.tooling.preview)
@@ -55,6 +61,7 @@ kotlin {
             implementation(libs.koin.composeViewmodel)
             implementation(libs.koin.composeViewmodelNavigation)
             implementation(libs.koin.composeNavigation3)
+            implementation(libs.composeIcons)
             api(libs.koin.annotations)
         }
         commonTest.dependencies {
