@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 @org.koin.core.annotation.Single
-actual class ControllerService actual constructor() : io.fusionpowered.bluemoon.domain.controller.ControllerStateProvider {
+actual class ControllerService actual constructor() : io.fusionpowered.bluemoon.domain.controller.ControllerClient {
 
     final override val controllerStateFlow: StateFlow<ControllerState>
         field = MutableStateFlow<ControllerState>(ControllerState())

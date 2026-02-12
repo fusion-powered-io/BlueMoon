@@ -1,5 +1,8 @@
 package io.fusionpowered.bluemoon.presentation.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,11 +20,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothClient
 import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
@@ -206,16 +215,16 @@ object BluetoothKeyboard {
                                     KeyInfo(",", "<", Key.Symbol.Comma),
                                     KeyInfo(".", ">", Key.Symbol.Dot),
                                     KeyInfo("/", "?", Key.Symbol.Slash),
-                                    KeyInfo("↑", key = Key.Function.Up, isAccent = true)
+                                    KeyInfo("↑", key = Key.Function.Up, isAccent = true, weight = 1.15f)
                                 ),
                                 listOf(
                                     KeyInfo("Ctrl", key = Key.Modifier.LeftControl, weight = 1.2f, isAccent = true),
                                     KeyInfo("Meta", key = Key.Modifier.LeftMeta, weight = 1.2f, isAccent = true),
                                     KeyInfo("Alt", key = Key.Modifier.LeftAlt, weight = 1.2f, isAccent = true),
                                     KeyInfo("Space", key = Key.Function.Space, weight = 3.5f),
-                                    KeyInfo("←", key = Key.Function.Left, isAccent = true),
-                                    KeyInfo("↓", key = Key.Function.Down, isAccent = true),
-                                    KeyInfo("→", key = Key.Function.Right, isAccent = true)
+                                    KeyInfo("←", key = Key.Function.Left, isAccent = true, weight = 0.8f),
+                                    KeyInfo("→", key = Key.Function.Right, isAccent = true, weight = 0.8f),
+                                    KeyInfo("↓", key = Key.Function.Down, isAccent = true, weight = 0.8f),
                                 )
                             )
                         }.forEach { row ->
@@ -248,23 +257,68 @@ object BluetoothKeyboard {
         isHighlighted: Boolean,
         onClick: () -> Unit,
     ) {
-        Surface(
-            modifier = Modifier.weight(weight).height(48.dp),
-            onClick = onClick,
-            shape = RoundedCornerShape(8.dp),
-            color = when {
-                isHighlighted -> Color(0xFF64B5F6)
-                isAccent -> Color(0xFF3E4759)
-                else -> Color(0xFF2D323E)
-            }
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = label,
-                    color = if (isHighlighted) Color.Black else Color.White,
-                    fontWeight = FontWeight.Bold
+        val themeColor = Color(0xFF4A90E2) // PS2 Blue
+        val highlightColor = Color(0xFF00FFCC) // PS2 Cyan/Green
+
+        // Dynamic styling based on state
+        val borderColor = when {
+            isHighlighted -> highlightColor.copy(alpha = 0.8f)
+            isAccent -> themeColor.copy(alpha = 0.5f)
+            else -> Color.White.copy(alpha = 0.12f)
+        }
+
+        val backgroundColor = when {
+            isHighlighted -> highlightColor.copy(alpha = 0.2f)
+            isAccent -> Color.White.copy(alpha = 0.08f)
+            else -> Color.White.copy(alpha = 0.04f)
+        }
+
+        Box(
+            modifier = Modifier
+                .weight(weight)
+                .height(48.dp)
+                .padding(2.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(backgroundColor, Color.Transparent)
+                    )
                 )
-            }
+                .border(
+                    width = 0.5.dp,
+                    color = borderColor,
+                    shape = RoundedCornerShape(2.dp)
+                )
+                .clickable(onClick = onClick)
+                .drawBehind {
+                    drawLine(
+                        color = Color.White.copy(alpha = 0.1f),
+                        start = Offset(0f, 0f),
+                        end = Offset(size.width, 0f),
+                        strokeWidth = 1.dp.toPx()
+                    )
+                    if (isHighlighted) {
+                        drawRect(
+                            brush = Brush.radialGradient(
+                                colors = listOf(highlightColor.copy(alpha = 0.15f), Color.Transparent),
+                                center = center,
+                                radius = size.maxDimension
+                            )
+                        )
+                    }
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = label.uppercase(),
+                color = if (isHighlighted) highlightColor else Color.White.copy(alpha = 0.8f),
+                style = TextStyle(
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    letterSpacing = 0.5.sp
+                )
+            )
         }
     }
 }
