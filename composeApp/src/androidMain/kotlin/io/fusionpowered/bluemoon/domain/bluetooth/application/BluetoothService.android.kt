@@ -1,6 +1,10 @@
 package io.fusionpowered.bluemoon.domain.bluetooth.application
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter.ACTION_STATE_CHANGED
+import android.bluetooth.BluetoothAdapter.EXTRA_STATE
+import android.bluetooth.BluetoothAdapter.STATE_OFF
+import android.bluetooth.BluetoothDevice.ACTION_ACL_DISCONNECTED
 import android.bluetooth.BluetoothDevice.ACTION_BOND_STATE_CHANGED
 import android.bluetooth.BluetoothDevice.BOND_BONDED
 import android.bluetooth.BluetoothDevice.BOND_NONE
@@ -82,8 +86,17 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCli
                 override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
                     if (profile == HID_DEVICE) {
                         hidDevice = proxy as BluetoothHidDevice
+
+                        hidDevice?.connectedDevices
+                            ?.firstOrNull()
+                            ?.toBluetoothDevice()
+                            ?.let { device ->
+                                lastConnectedDevice = device
+                                connectionStateFlow.update { ConnectionState.Connected(device) }
+                            }
                     }
                 }
+
 
                 override fun onServiceDisconnected(profile: Int) {
                     if (profile == HID_DEVICE) hidDevice = null
@@ -121,11 +134,36 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCli
                                 else -> {}
                             }
                         }
+
+                        ACTION_ACL_DISCONNECTED -> {
+                            val device = intent
+                                .getParcelableExtra<AndroidBluetoothDevice>(EXTRA_DEVICE)
+                                ?.toBluetoothDevice()
+                                ?: return
+
+                            when (val connectionState = connectionStateFlow.value) {
+                                is ConnectionState.Connected if connectionState.device == device -> {
+                                    lastConnectedDevice = null
+                                    connectionStateFlow.update { ConnectionState.Disconnected }
+                                }
+
+                                else -> {}
+                            }
+                        }
+
+                        ACTION_STATE_CHANGED -> {
+                            if (intent.getIntExtra(EXTRA_STATE, STATE_OFF) == STATE_OFF) {
+                                lastConnectedDevice = null
+                                connectionStateFlow.update { ConnectionState.Disconnected }
+                            }
+                        }
                     }
                 }
             },
             IntentFilter().apply {
                 addAction(ACTION_BOND_STATE_CHANGED)
+                addAction(ACTION_ACL_DISCONNECTED)
+                addAction(ACTION_STATE_CHANGED)
             }
         )
     }

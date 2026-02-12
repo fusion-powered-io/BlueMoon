@@ -2,22 +2,21 @@ package io.fusionpowered.bluemoon.presentation.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement.spacedBy
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DragHandleSizes
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDragHandle
 import androidx.compose.material3.VerticalDragHandleDefaults.colors
 import androidx.compose.material3.rememberBottomSheetScaffoldState
@@ -30,14 +29,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Keyboard
@@ -104,47 +105,29 @@ object BlueMoonScaffold {
         val state = presenter()
         BottomSheetScaffold(
             modifier = modifier,
-            topBar = { TopBar() },
             scaffoldState = state.scaffoldState,
+            sheetShape = RectangleShape,
             sheetDragHandle = {
                 SheetDragHandle(
                     sheetContent = state.sheetContent,
                     sheetState = state.scaffoldState.bottomSheetState
                 )
             },
-            sheetContent = { SheetContent(
-                sheetContent = state.sheetContent,
-                touchpadPresenter = touchpadPresenter,
-                keyboardPresenter = keyboardPresenter
-            ) },
-            sheetContainerColor = Color.White,
-            sheetSwipeEnabled = true
+            sheetContent = {
+                SheetContent(
+                    sheetContent = state.sheetContent,
+                    touchpadPresenter = touchpadPresenter,
+                    keyboardPresenter = keyboardPresenter
+                )
+            },
+            // THEME OVERRIDES:
+            sheetContainerColor = Color.Transparent, // Makes the M3 surface invisible
+            sheetSwipeEnabled = true,
+            // Optional: ensure the main content background is the PS2 Dark Blue/Black
+            containerColor = Color(0xFF00050A)
         ) {
             content()
         }
-    }
-
-    @Composable
-    private fun TopBar(
-        modifier: Modifier = Modifier,
-    ) {
-        CenterAlignedTopAppBar(
-            modifier = modifier
-                .shadow(elevation = 8.dp)
-                .background(Color.White),
-            title = {
-                Text(
-                    text = "Bluetooth Devices",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 0.5.sp
-                    )
-                )
-            },
-            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = Color.Transparent // Allows the parent Surface color to show
-            )
-        )
     }
 
     @Composable
@@ -155,11 +138,20 @@ object BlueMoonScaffold {
         coroutineScope: CoroutineScope = rememberCoroutineScope(),
     ) {
         Row(
-            modifier = modifier.fillMaxWidth(),
-            verticalAlignment = CenterVertically,
-            horizontalArrangement = spacedBy(80.dp, Alignment.CenterHorizontally)
+            modifier = modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .background(
+                    Brush.verticalGradient(
+                        0.0f to Color(0xFF6C7E9E),
+                        1.0f to Color(0xFF9CB2D7),
+                    )
+                )
+                .border(0.5.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(2.dp)),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(80.dp, Alignment.CenterHorizontally)
         ) {
-            Surface(
+           Surface(
                 modifier = Modifier.wrapContentSize(),
                 color = Color.Transparent,
                 onClick = {
@@ -174,8 +166,7 @@ object BlueMoonScaffold {
             ) {
                 Icon(
                     imageVector = TablerIcons.Mouse,
-                    modifier = Modifier
-                        .size(32.dp),
+                    modifier = Modifier.size(36.dp),
                     tint = Color.DarkGray,
                     contentDescription = "Trackpad",
                 )
@@ -194,9 +185,9 @@ object BlueMoonScaffold {
             ) {
                 VerticalDragHandle(
                     sizes = DragHandleSizes(
-                        size = DpSize(3.dp, 28.dp),
-                        pressedSize = DpSize(3.dp, 28.dp),
-                        draggedSize = DpSize(3.dp, 28.dp),
+                        size = DpSize(3.dp, 32.dp),
+                        pressedSize = DpSize(3.dp, 32.dp),
+                        draggedSize = DpSize(3.dp, 32.dp),
                     ),
                     colors = colors(color = Color.DarkGray)
                 )
@@ -214,10 +205,10 @@ object BlueMoonScaffold {
                     }
                 }
             ) {
+
                 Icon(
                     imageVector = TablerIcons.Keyboard,
-                    modifier = Modifier
-                        .size(32.dp),
+                    modifier = Modifier.size(36.dp),
                     tint = Color.DarkGray,
                     contentDescription = "Keyboard",
                 )
@@ -233,18 +224,19 @@ object BlueMoonScaffold {
         keyboardPresenter: @Composable () -> BluetoothKeyboard.State = { BluetoothKeyboard.present() },
     ) {
         AnimatedContent(
-            modifier = modifier,
+            modifier = modifier
+                .background(
+                    Brush.verticalGradient(
+                        0.0f to Color(0xFF5C6A83),
+                        1.0f to Color(0xFF181C2F),
+                    )
+                ),
             targetState = sheetContent.value,
             label = "animated content"
         ) { target ->
             when (target) {
-                SheetContent.Touchpad -> BluetoothTouchpad(
-                    presenter = touchpadPresenter
-                )
-
-                SheetContent.Keyboard -> BluetoothKeyboard(
-                    presenter = keyboardPresenter
-                )
+                SheetContent.Touchpad -> BluetoothTouchpad(presenter = touchpadPresenter)
+                SheetContent.Keyboard -> BluetoothKeyboard(presenter = keyboardPresenter)
             }
         }
     }

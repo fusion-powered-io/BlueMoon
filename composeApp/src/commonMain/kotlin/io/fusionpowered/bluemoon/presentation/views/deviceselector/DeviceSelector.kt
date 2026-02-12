@@ -1,7 +1,7 @@
 package io.fusionpowered.bluemoon.presentation.views.deviceselector
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,25 +19,24 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import bluemoon.composeapp.generated.resources.Res
+import bluemoon.composeapp.generated.resources.background
 import compose.icons.TablerIcons
 import compose.icons.tablericons.CirclePlus
 import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothClient
@@ -50,6 +49,7 @@ import io.fusionpowered.bluemoon.presentation.theme.BlueMoonTheme
 import io.fusionpowered.bluemoon.presentation.views.deviceselector.DeviceSelector.State
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
+import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 
 object DeviceSelector {
@@ -85,45 +85,32 @@ object DeviceSelector {
     operator fun invoke(
         modifier: Modifier = Modifier,
         presenter: @Composable () -> State = ::present,
-    ) =
-        Box(modifier = modifier.fillMaxSize()) {
-            val state = presenter()
+    ) {
+        val state = presenter()
 
-            val bottomSheetSize = remember { 60.dp }
+        Image(
+            painter = painterResource(Res.drawable.background),
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            contentDescription = null
+        )
+
+
+        Box(modifier = modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(bottom = bottomSheetSize)
+                    .padding(top = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 PairNewDeviceButton(state.onPairNewDevice)
-                state.availableDevices.forEachIndexed { index, device ->
-                    Device(
-                        presenter = { state.devicePresenter(device) }
-                    )
-
-                    // The separator logic stays the same
-                    if (index < state.availableDevices.size) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 20.dp),
-                            thickness = 0.5.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                        )
-                    }
+                state.availableDevices.forEach { device ->
+                    Device(presenter = { state.devicePresenter(device) })
                 }
             }
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(bottomSheetSize)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, MaterialTheme.colorScheme.surface)
-                        )
-                    )
-            )
         }
+    }
 }
 
 @Composable
@@ -134,7 +121,7 @@ fun PairNewDeviceButton(onClick: () -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp)
             .height(56.dp), // Matches the height shown in the render
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(8.dp),
         border = BorderStroke(1.5.dp, Color(0xFF4A90E2).copy(alpha = 0.6f)),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = Color(0xFF4A90E2)

@@ -25,7 +25,7 @@ import android.view.MotionEvent.AXIS_RZ
 import android.view.MotionEvent.AXIS_X
 import android.view.MotionEvent.AXIS_Y
 import android.view.MotionEvent.AXIS_Z
-import io.fusionpowered.bluemoon.domain.controller.ControllerStateProvider
+import io.fusionpowered.bluemoon.domain.controller.ControllerClient
 import io.fusionpowered.bluemoon.domain.controller.model.ControllerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,7 +39,7 @@ import org.koin.core.component.KoinComponent
 import kotlin.time.Clock
 
 @Single
-actual class ControllerService actual constructor() : ControllerStateProvider, KoinComponent {
+actual class ControllerService actual constructor() : ControllerClient, KoinComponent {
 
     @Volatile
     private var controllerState = ControllerState()
@@ -58,7 +58,6 @@ actual class ControllerService actual constructor() : ControllerStateProvider, K
     fun handle(input: InputEvent) {
         when (input) {
             is MotionEvent -> {
-                // Update the volatile raw state
                 controllerState = controllerState.copy(
                     id = input.eventTime,
                     r2Axis = input.getAxisValue(AXIS_GAS),
