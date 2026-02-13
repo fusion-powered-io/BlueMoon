@@ -93,7 +93,7 @@ tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMet
     dependsOn("kspCommonMainKotlinMetadata")
 }
 
-val appVersion = System.getenv("APP_VERSION") ?: "0.0.1-SNAPSHOT"
+val appVersion = System.getenv("APP_VERSION") ?: "1.0.0"
 
 android {
     namespace = "io.fusionpowered.bluemoon"
