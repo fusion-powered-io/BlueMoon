@@ -93,6 +93,8 @@ tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMet
     dependsOn("kspCommonMainKotlinMetadata")
 }
 
+val appVersion = System.getenv("APP_VERSION") ?: "0.0.1-SNAPSHOT"
+
 android {
     namespace = "io.fusionpowered.bluemoon"
     compileSdk = 36
@@ -101,8 +103,8 @@ android {
         applicationId = "io.fusionpowered.bluemoon"
         minSdk = 30
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionName = appVersion
+        versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toInt() ?: 1
     }
     packaging {
         resources {
@@ -127,7 +129,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "io.fusionpowered.bluemoon"
-            packageVersion = "1.0.0"
+            packageVersion = appVersion
         }
     }
 }
