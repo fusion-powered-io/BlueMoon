@@ -6,6 +6,7 @@ import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
 import io.fusionpowered.bluemoon.domain.controller.model.ControllerState
 import io.fusionpowered.bluemoon.domain.keyboard.model.KeyboardState
 import io.fusionpowered.bluemoon.domain.touchpad.model.TouchpadState
+import io.fusionpowered.bluemoon.domain.volume.model.VolumeState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.core.annotation.Single
@@ -56,6 +57,12 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCli
         touchPadState: TouchpadState,
     ) {
 
+    }
+
+    override fun send(
+        device: BluetoothDevice,
+        volumeState: VolumeState,
+    ) {
     }
 
 

@@ -4,6 +4,85 @@ import io.fusionpowered.bluemoon.domain.controller.model.ControllerState
 import io.fusionpowered.bluemoon.domain.keyboard.model.KeyboardState
 import io.fusionpowered.bluemoon.domain.keyboard.model.KeyboardState.Key
 import io.fusionpowered.bluemoon.domain.touchpad.model.TouchpadState
+import io.fusionpowered.bluemoon.domain.volume.model.VolumeState
+
+fun ControllerState.toReport() =
+    ByteArray(14).let { report ->
+        leftStickX.to16bit().let {
+            report[0] = (it and 0xFF).toByte()
+            report[1] = ((it shr 8) and 0xFF).toByte()
+        }
+        leftStickY.to16bit().let {
+            report[2] = (it and 0xFF).toByte()
+            report[3] = ((it shr 8) and 0xFF).toByte()
+        }
+        rightStickX.to16bit().let {
+            report[4] = (it and 0xFF).toByte()
+            report[5] = ((it shr 8) and 0xFF).toByte()
+        }
+        rightStickY.to16bit().let {
+            report[6] = (it and 0xFF).toByte()
+            report[7] = ((it shr 8) and 0xFF).toByte()
+        }
+
+        //R2 and L2 have to be sent both as axis and buttons
+        report[8] = r2Axis.to8bit().toByte()
+        report[9] = l2Axis.to8bit().toByte()
+
+        report[10] = run {
+            var buttons = 0
+            if (a) buttons = buttons or (1 shl 0)
+            if (b) buttons = buttons or (1 shl 1)
+            if (x) buttons = buttons or (1 shl 3)
+            if (y) buttons = buttons or (1 shl 4)
+            if (l1) buttons = buttons or (1 shl 6)
+            if (r1) buttons = buttons or (1 shl 7)
+            buttons.toByte()
+        }
+
+        report[11] = run {
+            var buttons = 0
+            if (l2Button) buttons = buttons or (1 shl 0)
+            if (r2Button) buttons = buttons or (1 shl 1)
+            if (select) buttons = buttons or (1 shl 2)
+            if (start) buttons = buttons or (1 shl 3)
+            if (guide) buttons = buttons or (1 shl 4)
+            if (l3) buttons = buttons or (1 shl 5)
+            if (r3) buttons = buttons or (1 shl 6)
+            buttons.toByte()
+        }
+
+        report[12] = run {
+            val up = dpadY < -0.5f
+            val down = dpadY > 0.5f
+            val left = dpadX < -0.5f
+            val right = dpadX > 0.5f
+
+            val hat = when {
+                up && !left && !right -> 0    // North (0)
+                up && right -> 1              // North-East (1)
+                right && !up && !down -> 2    // East (2)
+                down && right -> 3            // South-East (3)
+                down && !left && !right -> 4  // South (4)
+                down && left -> 5             // South-West (5)
+                left && !up && !down -> 6     // West (6)
+                up && left -> 7               // North-West (7)
+                else -> 15                    // Center (Values 8-15 are "Null/Released")
+            }
+            (hat and 0x0F).toByte()
+        }
+
+        //Extra Padding byte
+        report[13] = 0x00.toByte()
+        report
+    }
+
+private fun Float.to16bit(): Int =
+    (((coerceIn(-1f, 1f) + 1f) / 2f) * 65535).toInt()
+
+private fun Float.to8bit(): Int =
+    (coerceIn(0f, 1f) * 255).toInt()
+
 
 fun KeyboardState.toReport(): ByteArray =
     ByteArray(8).let { report ->
@@ -85,80 +164,13 @@ fun TouchpadState.toReport(): ByteArray =
         report
     }
 
-
-fun ControllerState.toReport() =
-    ByteArray(14).let { report ->
-        leftStickX.to16bit().let {
-            report[0] = (it and 0xFF).toByte()
-            report[1] = ((it shr 8) and 0xFF).toByte()
-        }
-        leftStickY.to16bit().let {
-            report[2] = (it and 0xFF).toByte()
-            report[3] = ((it shr 8) and 0xFF).toByte()
-        }
-        rightStickX.to16bit().let {
-            report[4] = (it and 0xFF).toByte()
-            report[5] = ((it shr 8) and 0xFF).toByte()
-        }
-        rightStickY.to16bit().let {
-            report[6] = (it and 0xFF).toByte()
-            report[7] = ((it shr 8) and 0xFF).toByte()
-        }
-
-        //R2 and L2 have to be sent both as axis and buttons
-        report[8] = r2Axis.to8bit().toByte()
-        report[9] = l2Axis.to8bit().toByte()
-
-        report[10] = run {
+fun VolumeState.toReport(): ByteArray =
+    ByteArray(1).let { report ->
+        report[0] = run {
             var buttons = 0
-            if (a) buttons = buttons or (1 shl 0)
-            if (b) buttons = buttons or (1 shl 1)
-            if (x) buttons = buttons or (1 shl 3)
-            if (y) buttons = buttons or (1 shl 4)
-            if (l1) buttons = buttons or (1 shl 6)
-            if (r1) buttons = buttons or (1 shl 7)
+            if (up) buttons = buttons or (1 shl 0)
+            if (down) buttons = buttons or (1 shl 1)
             buttons.toByte()
         }
-
-        report[11] = run {
-            var buttons = 0
-            if (l2Button) buttons = buttons or (1 shl 0)
-            if (r2Button) buttons = buttons or (1 shl 1)
-            if (select) buttons = buttons or (1 shl 2)
-            if (start) buttons = buttons or (1 shl 3)
-            if (guide) buttons = buttons or (1 shl 4)
-            if (l3) buttons = buttons or (1 shl 5)
-            if (r3) buttons = buttons or (1 shl 6)
-            buttons.toByte()
-        }
-
-        report[12] = run {
-            val up = dpadY < -0.5f
-            val down = dpadY > 0.5f
-            val left = dpadX < -0.5f
-            val right = dpadX > 0.5f
-
-            val hat = when {
-                up && !left && !right -> 0    // North (0)
-                up && right -> 1              // North-East (1)
-                right && !up && !down -> 2    // East (2)
-                down && right -> 3            // South-East (3)
-                down && !left && !right -> 4  // South (4)
-                down && left -> 5             // South-West (5)
-                left && !up && !down -> 6     // West (6)
-                up && left -> 7               // North-West (7)
-                else -> 15                    // Center (Values 8-15 are "Null/Released")
-            }
-            (hat and 0x0F).toByte()
-        }
-
-        //Extra Padding byte
-        report[13] = 0x00.toByte()
         report
     }
-
-private fun Float.to16bit(): Int =
-    (((coerceIn(-1f, 1f) + 1f) / 2f) * 65535).toInt()
-
-private fun Float.to8bit(): Int =
-    (coerceIn(0f, 1f) * 255).toInt()

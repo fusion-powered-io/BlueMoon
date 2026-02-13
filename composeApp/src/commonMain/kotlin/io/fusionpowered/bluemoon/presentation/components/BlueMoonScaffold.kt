@@ -30,13 +30,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -151,7 +147,7 @@ object BlueMoonScaffold {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(80.dp, Alignment.CenterHorizontally)
         ) {
-           Surface(
+            Surface(
                 modifier = Modifier.wrapContentSize(),
                 color = Color.Transparent,
                 onClick = {
@@ -205,7 +201,6 @@ object BlueMoonScaffold {
                     }
                 }
             ) {
-
                 Icon(
                     imageVector = TablerIcons.Keyboard,
                     modifier = Modifier.size(36.dp),

@@ -7,6 +7,7 @@ import io.fusionpowered.bluemoon.presentation.components.BlueMoonScaffold
 import io.fusionpowered.bluemoon.presentation.components.BluetoothController
 import io.fusionpowered.bluemoon.presentation.components.BluetoothKeyboard
 import io.fusionpowered.bluemoon.presentation.components.BluetoothTouchpad
+import io.fusionpowered.bluemoon.presentation.components.BluetoothVolume
 import io.fusionpowered.bluemoon.presentation.navigation.Navigator
 import io.fusionpowered.bluemoon.presentation.theme.BlueMoonTheme
 import io.fusionpowered.bluemoon.presentation.views.deviceselector.DeviceSelector
@@ -21,6 +22,7 @@ import org.koin.dsl.navigation3.navigation
 fun UiEntryPoint(
     navigator: Navigator = koinInject(),
     bluetoothControllerPresenter: @Composable () -> BluetoothController.State = { BluetoothController.present() },
+    bluetoothVolumePresenter: @Composable () -> BluetoothVolume.State = { BluetoothVolume.present() },
     deviceSelectorPresenter: @Composable () -> DeviceSelector.State = { DeviceSelector.present() },
     bluemoonScaffoldPresenter: @Composable () -> BlueMoonScaffold.State = { BlueMoonScaffold.present() },
     touchpadPresenter: @Composable () -> BluetoothTouchpad.State = { BluetoothTouchpad.present() },
@@ -29,6 +31,7 @@ fun UiEntryPoint(
     BlueMoonTheme {
         Surface {
             bluetoothControllerPresenter()
+            bluetoothVolumePresenter()
 
             rememberKoinModules {
                 listOf(
