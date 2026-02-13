@@ -5,6 +5,7 @@ import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
 import io.fusionpowered.bluemoon.domain.controller.model.ControllerState
 import io.fusionpowered.bluemoon.domain.keyboard.model.KeyboardState
 import io.fusionpowered.bluemoon.domain.touchpad.model.TouchpadState
+import io.fusionpowered.bluemoon.domain.volume.model.VolumeState
 import kotlinx.coroutines.flow.StateFlow
 
 interface BluetoothClient {
@@ -17,10 +18,12 @@ interface BluetoothClient {
 
     fun disconnect(device: BluetoothDevice)
 
+    fun send(device: BluetoothDevice, controllerState: ControllerState)
+
     fun send(device: BluetoothDevice, keyboardState: KeyboardState)
 
     fun send(device: BluetoothDevice, touchPadState: TouchpadState)
 
-    fun send(device: BluetoothDevice, controllerState: ControllerState)
+    fun send(device: BluetoothDevice, volumeState: VolumeState)
 
 }

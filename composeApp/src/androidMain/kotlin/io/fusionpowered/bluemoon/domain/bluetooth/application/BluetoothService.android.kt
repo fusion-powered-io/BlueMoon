@@ -32,6 +32,7 @@ import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
 import io.fusionpowered.bluemoon.domain.controller.model.ControllerState
 import io.fusionpowered.bluemoon.domain.keyboard.model.KeyboardState
 import io.fusionpowered.bluemoon.domain.touchpad.model.TouchpadState
+import io.fusionpowered.bluemoon.domain.volume.model.VolumeState
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -235,11 +236,20 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCli
         connectionStateFlow.update { ConnectionState.Disconnected }
     }
 
-    override fun send(device: BluetoothDevice, keyboardState: KeyboardState) {
+    override fun send(device: BluetoothDevice, controllerState: ControllerState) {
         val androidDevice = adapter.getRemoteDevice(device.mac)
         hidDevice?.sendReport(
             androidDevice,
             1,
+            controllerState.toReport()
+        )
+    }
+
+    override fun send(device: BluetoothDevice, keyboardState: KeyboardState) {
+        val androidDevice = adapter.getRemoteDevice(device.mac)
+        hidDevice?.sendReport(
+            androidDevice,
+            2,
             keyboardState.toReport()
         )
     }
@@ -248,17 +258,17 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCli
         val androidDevice = adapter.getRemoteDevice(device.mac)
         hidDevice?.sendReport(
             androidDevice,
-            2,
+            3,
             touchPadState.toReport()
         )
     }
 
-    override fun send(device: BluetoothDevice, controllerState: ControllerState) {
+    override fun send(device: BluetoothDevice, volumeState: VolumeState) {
         val androidDevice = adapter.getRemoteDevice(device.mac)
         hidDevice?.sendReport(
             androidDevice,
-            3,
-            controllerState.toReport()
+            4,
+            volumeState.toReport()
         )
     }
 
