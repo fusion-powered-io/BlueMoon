@@ -6,6 +6,55 @@ data object BluemoonHid {
     const val DESCRIPTION = "BlueMoon HID Controller"
     const val MANUFACTURER = "Fusion"
     val DESCRIPTOR = ubyteArrayOf(
+        // Keyboard
+        0x05u, 0x01u,                       // Usage Page (Generic Desktop)
+        0x09u, 0x06u,                       // Usage (Keyboard)
+        0xA1u, 0x01u,                       // Collection (Application)
+        0x85u, 0x02u,                       // Report ID
+        0x05u, 0x07u,                       // Usage Page (Keyboard)
+        0x19u, 0xE0u,                       // Usage Minimum (224)
+        0x29u, 0xE7u,                       // Usage Maximum (231)
+        0x25u, 0x01u,                       // Logical Maximum (1)
+        0x75u, 0x01u,                       // Report Size (1)
+        0x95u, 0x08u,                       // Report Count (8)
+        0x81u, 0x02u,                       // Input (Data,Var,Abs) ; modifiers
+        0x95u, 0x01u,                       // Report Count (1)
+        0x75u, 0x08u,                       // Report Size (8)
+        0x81u, 0x01u,                       // Input (Const) ; reserved
+        0x95u, 0x05u,                       // Report Count (5)
+        0x75u, 0x01u,                       // Report Size (1)
+        0x05u, 0x08u,                       // Usage Page (LEDs)
+        0x19u, 0x01u,
+        0x29u, 0x05u,
+        0x91u, 0x02u,                       // Output (LEDs)
+        0x95u, 0x01u, 0x75u, 0x03u, 0x91u, 0x01u, // Output padding
+        0x95u, 0x06u, 0x75u, 0x08u,         // Report Size (8)
+        0x15u, 0x00u, 0x25u, 0x65u,         // Logical Max (101)
+        0x05u, 0x07u,                       // Usage Page (Keyboard)
+        0x19u, 0x00u, 0x29u, 0x65u,
+        0x81u, 0x00u,                       // Input (Keycodes)
+        0xC0u,
+
+        // Mouse
+        0x05u, 0x01u,                       // Usage Page (Generic Desktop)
+        0x09u, 0x02u,                       // Usage (Mouse)
+        0xA1u, 0x01u,                       // Collection (Application)
+        0x85u, 0x03u,                       // Report ID
+        0x09u, 0x01u,                       // Usage (Pointer)
+        0xA1u, 0x00u,                       // Collection (Physical)
+        0x05u, 0x09u,                       // Usage Page (Buttons)
+        0x19u, 0x01u, 0x29u, 0x03u,
+        0x15u, 0x00u, 0x25u, 0x01u,
+        0x95u, 0x03u, 0x75u, 0x01u, 0x81u, 0x02u, // Buttons
+        0x95u, 0x01u, 0x75u, 0x05u, 0x81u, 0x01u, // Padding
+        0x05u, 0x01u,                       // Usage Page (Generic Desktop)
+        0x09u, 0x30u, 0x09u, 0x31u,
+        0x15u, 0x81u, 0x25u, 0x7Fu,
+        0x75u, 0x08u, 0x95u, 0x02u, 0x81u, 0x06u, // Rel X, Y
+        0x09u, 0x38u,                       // Usage (Wheel)
+        0x95u, 0x01u, 0x81u, 0x06u,         // Rel Wheel
+        0xC0u, 0xC0u,
+
         // Gamepad
         0x05u, 0x01u,                       // Usage Page (Generic Desktop)
         0x09u, 0x05u,                       // Usage (Game Pad)
@@ -59,55 +108,6 @@ data object BluemoonHid {
         0x75u, 0x04u,                       // Report Size (4)
         0x81u, 0x03u,                       // Input (Constant, Variable, Absolute)
         0xC0u,                               // End Collection
-
-        // Keyboard
-        0x05u, 0x01u,                       // Usage Page (Generic Desktop)
-        0x09u, 0x06u,                       // Usage (Keyboard)
-        0xA1u, 0x01u,                       // Collection (Application)
-        0x85u, 0x02u,                       // Report ID
-        0x05u, 0x07u,                       // Usage Page (Keyboard)
-        0x19u, 0xE0u,                       // Usage Minimum (224)
-        0x29u, 0xE7u,                       // Usage Maximum (231)
-        0x25u, 0x01u,                       // Logical Maximum (1)
-        0x75u, 0x01u,                       // Report Size (1)
-        0x95u, 0x08u,                       // Report Count (8)
-        0x81u, 0x02u,                       // Input (Data,Var,Abs) ; modifiers
-        0x95u, 0x01u,                       // Report Count (1)
-        0x75u, 0x08u,                       // Report Size (8)
-        0x81u, 0x01u,                       // Input (Const) ; reserved
-        0x95u, 0x05u,                       // Report Count (5)
-        0x75u, 0x01u,                       // Report Size (1)
-        0x05u, 0x08u,                       // Usage Page (LEDs)
-        0x19u, 0x01u,
-        0x29u, 0x05u,
-        0x91u, 0x02u,                       // Output (LEDs)
-        0x95u, 0x01u, 0x75u, 0x03u, 0x91u, 0x01u, // Output padding
-        0x95u, 0x06u, 0x75u, 0x08u,         // Report Size (8)
-        0x15u, 0x00u, 0x25u, 0x65u,         // Logical Max (101)
-        0x05u, 0x07u,                       // Usage Page (Keyboard)
-        0x19u, 0x00u, 0x29u, 0x65u,
-        0x81u, 0x00u,                       // Input (Keycodes)
-        0xC0u,
-
-        // Mouse
-        0x05u, 0x01u,                       // Usage Page (Generic Desktop)
-        0x09u, 0x02u,                       // Usage (Mouse)
-        0xA1u, 0x01u,                       // Collection (Application)
-        0x85u, 0x03u,                       // Report ID
-        0x09u, 0x01u,                       // Usage (Pointer)
-        0xA1u, 0x00u,                       // Collection (Physical)
-        0x05u, 0x09u,                       // Usage Page (Buttons)
-        0x19u, 0x01u, 0x29u, 0x03u,
-        0x15u, 0x00u, 0x25u, 0x01u,
-        0x95u, 0x03u, 0x75u, 0x01u, 0x81u, 0x02u, // Buttons
-        0x95u, 0x01u, 0x75u, 0x05u, 0x81u, 0x01u, // Padding
-        0x05u, 0x01u,                       // Usage Page (Generic Desktop)
-        0x09u, 0x30u, 0x09u, 0x31u,
-        0x15u, 0x81u, 0x25u, 0x7Fu,
-        0x75u, 0x08u, 0x95u, 0x02u, 0x81u, 0x06u, // Rel X, Y
-        0x09u, 0x38u,                       // Usage (Wheel)
-        0x95u, 0x01u, 0x81u, 0x06u,         // Rel Wheel
-        0xC0u, 0xC0u,
 
         // Media Remote
         0x05u, 0x0Cu,                       // USAGE_PAGE (Consumer Devices)

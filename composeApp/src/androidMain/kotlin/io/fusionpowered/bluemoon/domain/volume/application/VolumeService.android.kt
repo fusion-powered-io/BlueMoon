@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import org.koin.core.annotation.Single
 import org.koin.core.component.KoinComponent
+import kotlin.time.Clock
 
 @Single
 actual class VolumeService actual constructor() : VolumeClient, KoinComponent {
@@ -26,8 +27,7 @@ actual class VolumeService actual constructor() : VolumeClient, KoinComponent {
                 KEYCODE_VOLUME_UP -> volumeState.copy(up = isDown)
                 KEYCODE_VOLUME_DOWN -> volumeState.copy(down = isDown)
                 else -> volumeState
-            }
+            }.copy(id = Clock.System.now().toEpochMilliseconds())
         }
     }
-
 }

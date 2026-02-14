@@ -12,13 +12,10 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.BottomSheetScaffoldState
-import androidx.compose.material3.DragHandleSizes
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
-import androidx.compose.material3.VerticalDragHandle
-import androidx.compose.material3.VerticalDragHandleDefaults.colors
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -33,11 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Keyboard
+import compose.icons.tablericons.MinusVertical
 import compose.icons.tablericons.Mouse
 import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothClient
 import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
@@ -145,11 +143,10 @@ object BlueMoonScaffold {
                 )
                 .border(0.5.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(2.dp)),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(80.dp, Alignment.CenterHorizontally)
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Surface(
-                modifier = Modifier.wrapContentSize(),
-                color = Color.Transparent,
+            DragHandleIcon(
+                icon = TablerIcons.Mouse,
                 onClick = {
                     coroutineScope.launch {
                         if (sheetState.targetValue != SheetValue.Expanded) {
@@ -159,17 +156,9 @@ object BlueMoonScaffold {
                         sheetContent.value = SheetContent.Touchpad
                     }
                 }
-            ) {
-                Icon(
-                    imageVector = TablerIcons.Mouse,
-                    modifier = Modifier.size(36.dp),
-                    tint = Color.DarkGray,
-                    contentDescription = "Trackpad",
-                )
-            }
-            Surface(
-                modifier = Modifier.wrapContentSize(),
-                color = Color.Transparent,
+            )
+            DragHandleIcon(
+                icon = TablerIcons.MinusVertical,
                 onClick = {
                     coroutineScope.launch {
                         when (sheetState.targetValue) {
@@ -178,19 +167,9 @@ object BlueMoonScaffold {
                         }
                     }
                 }
-            ) {
-                VerticalDragHandle(
-                    sizes = DragHandleSizes(
-                        size = DpSize(3.dp, 32.dp),
-                        pressedSize = DpSize(3.dp, 32.dp),
-                        draggedSize = DpSize(3.dp, 32.dp),
-                    ),
-                    colors = colors(color = Color.DarkGray)
-                )
-            }
-            Surface(
-                modifier = Modifier.wrapContentSize(),
-                color = Color.Transparent,
+            )
+            DragHandleIcon(
+                icon = TablerIcons.Keyboard,
                 onClick = {
                     coroutineScope.launch {
                         if (sheetState.targetValue != SheetValue.Expanded) {
@@ -200,14 +179,27 @@ object BlueMoonScaffold {
                         sheetContent.value = SheetContent.Keyboard
                     }
                 }
-            ) {
-                Icon(
-                    imageVector = TablerIcons.Keyboard,
-                    modifier = Modifier.size(36.dp),
-                    tint = Color.DarkGray,
-                    contentDescription = "Keyboard",
-                )
-            }
+            )
+        }
+    }
+
+    @Composable
+    private fun DragHandleIcon(
+        modifier: Modifier = Modifier,
+        icon: ImageVector,
+        onClick: () -> Unit,
+    ) {
+        Surface(
+            modifier = Modifier.wrapContentSize(),
+            color = Color.Transparent,
+            onClick = onClick
+        ) {
+            Icon(
+                imageVector = icon,
+                modifier = modifier.size(36.dp),
+                tint = Color.DarkGray,
+                contentDescription = "Keyboard",
+            )
         }
     }
 
