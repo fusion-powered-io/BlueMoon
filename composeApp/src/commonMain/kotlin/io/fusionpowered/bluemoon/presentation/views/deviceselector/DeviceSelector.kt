@@ -3,7 +3,6 @@ package io.fusionpowered.bluemoon.presentation.views.deviceselector
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -95,19 +94,16 @@ object DeviceSelector {
             contentDescription = null
         )
 
-
-        Box(modifier = modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(top = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                PairNewDeviceButton(state.onPairNewDevice)
-                state.availableDevices.forEach { device ->
-                    Device(presenter = { state.devicePresenter(device) })
-                }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(top = 24.dp, bottom = 60.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            PairNewDeviceButton(state.onPairNewDevice)
+            state.availableDevices.forEach { device ->
+                Device(presenter = { state.devicePresenter(device) })
             }
         }
     }
