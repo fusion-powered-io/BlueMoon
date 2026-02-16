@@ -38,9 +38,13 @@ Your device will be recognized as a native hardware controller, keyboard, or mou
 
 ## 🖼️ Screenshots
 
-| Home                                   | Touchpad                        | Keyboard                        |
-|----------------------------------------|---------------------------------|---------------------------------|
-| ![](./screenshots/device_selector.png) | ![](./screenshots/touchpad.png) | ![](./screenshots/keyboard.png) |
+| Home Disconnected                                         | Home Connected                                     | Blackout Mode                          |
+|-----------------------------------------------------------|----------------------------------------------------|----------------------------------------|
+| ![](./screenshots/device_selector_disconnected.png)       | ![](./screenshots/device_selector_connected.png)   | ![](./screenshots/blackout_mode.png)   |
+
+| Touchpad                        | Keyboard                        |
+|---------------------------------|---------------------------------|
+| ![](./screenshots/touchpad.png) | ![](./screenshots/keyboard.png) |
 
 ---
 
