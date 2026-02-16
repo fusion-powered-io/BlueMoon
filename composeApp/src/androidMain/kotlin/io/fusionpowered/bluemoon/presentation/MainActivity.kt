@@ -13,6 +13,7 @@ import android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
 import android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.SideEffect
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -43,20 +44,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun setFullscreen() {
-        // Force the layout to use the entire screen including under system bars
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
-        // Use the Compat controller for stable behavior across Android versions
-        val controller = WindowInsetsControllerCompat(window, window.decorView)
-
-        // Hide both status bars (top) and navigation bars (bottom)
-        controller.hide(WindowInsetsCompat.Type.systemBars())
-
-        // This allows the bars to float over the app then disappear automatically
-        controller.systemBarsBehavior = BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-
-        // Handle the Notch/Camera Cutout
-        window.attributes.layoutInDisplayCutoutMode = LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        enableEdgeToEdge()
+        WindowInsetsControllerCompat(window, window.decorView)
+            .apply { systemBarsBehavior = BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE }
+            .hide(WindowInsetsCompat.Type.systemBars())
     }
 
     override fun onGenericMotionEvent(event: MotionEvent?): Boolean =
