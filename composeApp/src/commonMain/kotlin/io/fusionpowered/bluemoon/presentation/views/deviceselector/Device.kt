@@ -57,7 +57,6 @@ import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice.MajorClass.COMPUTER
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice.MajorClass.PHONE
 import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
-import io.fusionpowered.bluemoon.presentation.modifier.specularShine
 import io.fusionpowered.bluemoon.presentation.views.deviceselector.Device.State
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -163,7 +162,7 @@ object Device {
         Box(
             modifier = modifier
                 .fillMaxWidth()
-                .height(86.dp)
+                .height(88.dp)
                 .padding(horizontal = 16.dp, vertical = 6.dp)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
@@ -218,9 +217,9 @@ object Device {
         ) {
             val totalOffset = (swipeOffset.value + nudgeOffset.value).absoluteValue
             val progress = (totalOffset / maxSwipe).coerceIn(0f, 1f)
+            SpecularShine(progress)
             Row(
                 modifier = Modifier
-                    .specularShine(progress)
                     .fillMaxSize()
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -235,7 +234,27 @@ object Device {
         }
     }
 
-
+    @Composable
+    private fun SpecularShine(progress: Float) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .drawBehind {
+                    val shineX = progress * size.width
+                    drawRect(
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.White.copy(alpha = 0.15f),
+                                Color.Transparent
+                            ),
+                            start = Offset(shineX - 200f, 0f),
+                            end = Offset(shineX - 40f, size.height)
+                        )
+                    )
+                }
+        )
+    }
 
     @Composable
     private fun DeviceClassIcon(

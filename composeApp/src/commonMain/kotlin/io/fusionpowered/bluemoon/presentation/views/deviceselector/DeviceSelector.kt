@@ -59,6 +59,7 @@ object DeviceSelector {
     @Composable
     fun present(
         bluetoothClient: BluetoothClient = koinInject(),
+        bluetoothSettings: BluetoothSettings = koinInject(),
     ): State {
         val availableDevices by bluetoothClient.pairedDevices
             .map {
@@ -68,12 +69,14 @@ object DeviceSelector {
 
         return State(
             availableDevices = availableDevices,
+            onPairNewDevice = { bluetoothSettings.launch() },
             devicePresenter = { device -> Device.present(device) }
         )
     }
 
     data class State(
         val availableDevices: Set<BluetoothDevice> = emptySet(),
+        val onPairNewDevice: () -> Unit = {},
         val devicePresenter: @Composable (bluetoothDevice: BluetoothDevice) -> Device.State,
     )
 
@@ -84,16 +87,73 @@ object DeviceSelector {
     ) {
         val state = presenter()
 
+        Image(
+            painter = painterResource(Res.drawable.background),
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            contentDescription = null
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(top = 6.dp, bottom = 60.dp),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
+                .padding(top = 24.dp, bottom = 60.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            PairNewDeviceButton(state.onPairNewDevice)
             state.availableDevices.forEach { device ->
                 Device(presenter = { state.devicePresenter(device) })
             }
+        }
+    }
+}
+
+@Composable
+fun PairNewDeviceButton(onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .height(56.dp), // Matches the height shown in the render
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.5.dp, Color(0xFF4A90E2).copy(alpha = 0.6f)),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = Color(0xFF4A90E2)
+        ),
+        contentPadding = PaddingValues(horizontal = 16.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start, // Aligns content like the image
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            // The Circular Plus Icon
+            Surface(
+                shape = CircleShape,
+                color = Color.Transparent,
+                border = BorderStroke(1.5.dp, Color(0xFF4A90E2)),
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = TablerIcons.CirclePlus,
+                    contentDescription = null,
+                    modifier = Modifier.padding(2.dp),
+                    tint = Color(0xFF4A90E2)
+                )
+            }
+
+            Spacer(Modifier.width(24.dp)) // Large gap as seen in the UI render
+
+            Text(
+                text = "Pair New Device",
+                style = TextStyle(
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 0.5.sp
+                )
+            )
         }
     }
 }
