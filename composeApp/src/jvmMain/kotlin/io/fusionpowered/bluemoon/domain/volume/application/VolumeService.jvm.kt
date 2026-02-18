@@ -9,7 +9,7 @@ import org.koin.core.annotation.Single
 @Single
 actual class VolumeService : VolumeClient {
 
-    override val volumeStateFlow: StateFlow<VolumeState>
+    final override val volumeStateFlow: StateFlow<VolumeState>
         field = MutableStateFlow(VolumeState())
 
 }

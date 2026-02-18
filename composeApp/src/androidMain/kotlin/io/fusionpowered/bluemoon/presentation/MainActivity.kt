@@ -8,14 +8,11 @@ import android.os.Build.VERSION_CODES.S
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.MotionEvent
-import android.view.WindowManager
 import android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-import android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.SideEffect
-import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
