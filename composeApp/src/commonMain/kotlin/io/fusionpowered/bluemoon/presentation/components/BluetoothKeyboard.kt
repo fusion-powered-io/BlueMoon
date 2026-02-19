@@ -30,7 +30,7 @@ import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
 import io.fusionpowered.bluemoon.domain.keyboard.model.KeyboardState
 import io.fusionpowered.bluemoon.domain.keyboard.model.KeyboardState.Key
 import io.fusionpowered.bluemoon.presentation.components.BluetoothKeyboard.State.Connected.KeyInfo
-import io.fusionpowered.bluemoon.presentation.preview.PreviewApplication
+import io.fusionpowered.bluemoon.bootstrap.PreviewApplication
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Qualifier
 
@@ -323,7 +323,10 @@ object BluetoothKeyboard {
     }
 }
 
-@Preview
+@Preview(
+    heightDp = 480,
+    widthDp = 640,
+)
 @Composable
 fun BluetoothKeyboardPreview() =
     PreviewApplication {

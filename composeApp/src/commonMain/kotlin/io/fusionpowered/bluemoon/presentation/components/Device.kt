@@ -1,4 +1,4 @@
-package io.fusionpowered.bluemoon.presentation.views.deviceselector
+package io.fusionpowered.bluemoon.presentation.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
@@ -44,7 +44,7 @@ import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice.MajorCla
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice.MajorClass.PHONE
 import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
 import io.fusionpowered.bluemoon.presentation.modifier.specularShine
-import io.fusionpowered.bluemoon.presentation.preview.PreviewApplication
+import io.fusionpowered.bluemoon.bootstrap.PreviewApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

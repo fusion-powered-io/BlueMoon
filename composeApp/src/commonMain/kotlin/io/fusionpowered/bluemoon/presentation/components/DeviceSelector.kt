@@ -1,4 +1,4 @@
-package io.fusionpowered.bluemoon.presentation.views.deviceselector
+package io.fusionpowered.bluemoon.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,7 +17,7 @@ import io.fusionpowered.bluemoon.bootstrap.injectPresenter
 import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothClient
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice.MajorClass.*
-import io.fusionpowered.bluemoon.presentation.preview.PreviewApplication
+import io.fusionpowered.bluemoon.bootstrap.PreviewApplication
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import org.koin.core.annotation.Factory

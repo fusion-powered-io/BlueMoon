@@ -2,20 +2,8 @@ package io.fusionpowered.bluemoon.domain.controller.application
 
 import android.view.InputEvent
 import android.view.KeyEvent
+import android.view.KeyEvent.*
 import android.view.KeyEvent.ACTION_DOWN
-import android.view.KeyEvent.KEYCODE_BACK
-import android.view.KeyEvent.KEYCODE_BUTTON_A
-import android.view.KeyEvent.KEYCODE_BUTTON_B
-import android.view.KeyEvent.KEYCODE_BUTTON_L1
-import android.view.KeyEvent.KEYCODE_BUTTON_L2
-import android.view.KeyEvent.KEYCODE_BUTTON_R1
-import android.view.KeyEvent.KEYCODE_BUTTON_R2
-import android.view.KeyEvent.KEYCODE_BUTTON_SELECT
-import android.view.KeyEvent.KEYCODE_BUTTON_START
-import android.view.KeyEvent.KEYCODE_BUTTON_THUMBL
-import android.view.KeyEvent.KEYCODE_BUTTON_THUMBR
-import android.view.KeyEvent.KEYCODE_BUTTON_X
-import android.view.KeyEvent.KEYCODE_BUTTON_Y
 import android.view.MotionEvent
 import android.view.MotionEvent.AXIS_BRAKE
 import android.view.MotionEvent.AXIS_GAS

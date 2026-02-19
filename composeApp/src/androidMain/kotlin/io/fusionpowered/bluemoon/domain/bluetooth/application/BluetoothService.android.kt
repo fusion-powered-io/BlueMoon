@@ -1,15 +1,8 @@
 package io.fusionpowered.bluemoon.domain.bluetooth.application
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter.ACTION_STATE_CHANGED
-import android.bluetooth.BluetoothAdapter.EXTRA_STATE
-import android.bluetooth.BluetoothAdapter.STATE_OFF
-import android.bluetooth.BluetoothDevice.ACTION_ACL_DISCONNECTED
-import android.bluetooth.BluetoothDevice.ACTION_BOND_STATE_CHANGED
-import android.bluetooth.BluetoothDevice.BOND_BONDED
-import android.bluetooth.BluetoothDevice.BOND_NONE
-import android.bluetooth.BluetoothDevice.EXTRA_BOND_STATE
-import android.bluetooth.BluetoothDevice.EXTRA_DEVICE
+import android.bluetooth.BluetoothAdapter.*
+import android.bluetooth.BluetoothDevice.*
 import android.bluetooth.BluetoothHidDevice
 import android.bluetooth.BluetoothHidDevice.SUBCLASS1_COMBO
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings
@@ -42,17 +35,7 @@ import org.koin.core.annotation.Single
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.concurrent.Executors
-import kotlin.Boolean
-import kotlin.Int
-import kotlin.Unit
-import kotlin.apply
-import kotlin.checkNotNull
-import kotlin.collections.minus
-import kotlin.collections.plus
 import kotlin.experimental.or
-import kotlin.getValue
-import kotlin.let
-import kotlin.takeIf
 
 private typealias AndroidBluetoothDevice = android.bluetooth.BluetoothDevice
 
@@ -174,7 +157,11 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCli
 
         val remoteDevice = adapter.getRemoteDevice(device.mac)
         when {
-            hidDevice?.connectedDevices?.contains(remoteDevice) == true -> connectionStateFlow.update { ConnectionState.Connected(device) }
+            hidDevice?.connectedDevices?.contains(remoteDevice) == true -> connectionStateFlow.update {
+                ConnectionState.Connected(
+                    device
+                )
+            }
 
             else -> {
                 ensureAppRegistration()
@@ -201,7 +188,10 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCli
             Executors.newSingleThreadExecutor(),
             object : BluetoothHidDevice.Callback() {
 
-                override fun onAppStatusChanged(pluggedDevice: android.bluetooth.BluetoothDevice?, registered: Boolean) {
+                override fun onAppStatusChanged(
+                    pluggedDevice: AndroidBluetoothDevice?,
+                    registered: Boolean
+                ) {
                     super.onAppStatusChanged(pluggedDevice, registered)
                     if (registered) {
                         registrationComplete.complete(Unit)

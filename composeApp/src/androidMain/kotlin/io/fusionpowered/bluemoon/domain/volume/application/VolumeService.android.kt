@@ -1,9 +1,7 @@
 package io.fusionpowered.bluemoon.domain.volume.application
 
 import android.view.KeyEvent
-import android.view.KeyEvent.ACTION_DOWN
-import android.view.KeyEvent.KEYCODE_VOLUME_DOWN
-import android.view.KeyEvent.KEYCODE_VOLUME_UP
+import android.view.KeyEvent.*
 import io.fusionpowered.bluemoon.domain.volume.VolumeClient
 import io.fusionpowered.bluemoon.domain.volume.model.VolumeState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,4 +28,5 @@ actual class VolumeService actual constructor() : VolumeClient, KoinComponent {
             }.copy(id = Clock.System.now().toEpochMilliseconds())
         }
     }
+
 }
