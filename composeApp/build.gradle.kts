@@ -48,6 +48,7 @@ kotlin {
             implementation(libs.foundation)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.ui)
+            implementation(libs.ui.tooling.preview)
             implementation(libs.components.resources)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
@@ -77,7 +78,7 @@ dependencies {
     add("kspCommonMainMetadata", libs.koin.ksp.compiler)
     add("kspAndroid", libs.koin.ksp.compiler)
     add("kspJvm", libs.koin.ksp.compiler)
-    debugImplementation(libs.ui.tooling.preview)
+    debugImplementation(compose.uiTooling)
 }
 
 ksp {

@@ -3,21 +3,10 @@ package io.fusionpowered.bluemoon.presentation.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,86 +19,97 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.fusionpowered.bluemoon.bootstrap.KoinPresenter
+import io.fusionpowered.bluemoon.bootstrap.injectPresenter
 import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothClient
 import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
 import io.fusionpowered.bluemoon.domain.keyboard.model.KeyboardState
 import io.fusionpowered.bluemoon.domain.keyboard.model.KeyboardState.Key
 import io.fusionpowered.bluemoon.presentation.components.BluetoothKeyboard.State.Connected.KeyInfo
-import org.koin.compose.koinInject
+import io.fusionpowered.bluemoon.presentation.preview.PreviewApplication
+import org.koin.core.annotation.Factory
+import org.koin.core.annotation.Qualifier
 
 
 object BluetoothKeyboard {
 
-    @Composable
-    fun present(
-        bluetoothClient: BluetoothClient = koinInject(),
-    ): State {
-        val connectionState by bluetoothClient.connectionStateFlow.collectAsStateWithLifecycle()
-        val haptic = LocalHapticFeedback.current
+    @Qualifier(State::class)
+    @Factory
+    class Presenter(
+        private val bluetoothClient: BluetoothClient,
+    ) : KoinPresenter<State> {
 
-        return when (val conn = connectionState) {
-            is ConnectionState.Connected -> {
-                var activeModifiers by remember { mutableStateOf(setOf<Key.Modifier>()) }
-                var isCapsLocked by remember { mutableStateOf(false) }
+        @Composable
+        override fun present(): State {
+            val connectionState by bluetoothClient.connectionStateFlow.collectAsStateWithLifecycle()
+            val haptic = LocalHapticFeedback.current
 
-                // This strike approach currently limits me to one key press at a time.
-                // The HID can support up to 6 keys, so this could be improved.
-                fun strike(key: Key) {
-                    haptic.performHapticFeedback(HapticFeedbackType.KeyboardTap)
-                    bluetoothClient.send(conn.device, KeyboardState(activeModifiers, setOf(key)))
-                    bluetoothClient.send(conn.device, KeyboardState(activeModifiers, emptySet()))
+            return when (val conn = connectionState) {
+                is ConnectionState.Connected -> {
+                    var activeModifiers by remember { mutableStateOf(setOf<Key.Modifier>()) }
+                    var isCapsLocked by remember { mutableStateOf(false) }
+
+                    // This strike approach currently limits me to one key press at a time.
+                    // The HID can support up to 6 keys, so this could be improved.
+                    fun strike(key: Key) {
+                        haptic.performHapticFeedback(HapticFeedbackType.KeyboardTap)
+                        bluetoothClient.send(conn.device, KeyboardState(activeModifiers, setOf(key)))
+                        bluetoothClient.send(conn.device, KeyboardState(activeModifiers, emptySet()))
+                    }
+
+                    State.Connected(
+                        getDisplayLabel = { info ->
+                            val isShifted =
+                                activeModifiers.any { it == Key.Modifier.LeftShift || it == Key.Modifier.RightShift }
+                            when {
+                                isShifted && info.shiftLabel != null -> info.shiftLabel
+                                (isShifted || isCapsLocked) && info.key is Key.Letter -> info.label.uppercase()
+                                else -> info.label.lowercase()
+                            }
+                        },
+                        isHighlighted = { info ->
+                            when (val k = info.key) {
+                                is Key.Modifier -> activeModifiers.contains(k)
+                                is Key.Function -> if (k == Key.Function.CapsLock) isCapsLocked else false
+                                else -> false
+                            }
+                        },
+                        onKeyClick = { info ->
+                            when (val clickedKey = info.key) {
+                                is Key.Modifier -> {
+                                    if (clickedKey in activeModifiers) {
+                                        haptic.performHapticFeedback(HapticFeedbackType.ToggleOff)
+                                        activeModifiers = activeModifiers - clickedKey
+                                    } else {
+                                        haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                                        activeModifiers = activeModifiers + clickedKey
+                                    }
+                                }
+
+                                is Key.Function -> {
+                                    if (clickedKey == Key.Function.CapsLock) {
+                                        isCapsLocked = !isCapsLocked
+                                        strike(Key.Function.CapsLock)
+                                    } else {
+                                        strike(clickedKey)
+                                    }
+                                }
+
+                                else -> {
+                                    strike(clickedKey)
+                                    activeModifiers = activeModifiers - Key.Modifier.LeftShift - Key.Modifier.RightShift
+                                }
+                            }
+                        }
+                    )
                 }
 
-                State.Connected(
-                    getDisplayLabel = { info ->
-                        val isShifted = activeModifiers.any { it == Key.Modifier.LeftShift || it == Key.Modifier.RightShift }
-                        when {
-                            isShifted && info.shiftLabel != null -> info.shiftLabel
-                            (isShifted || isCapsLocked) && info.key is Key.Letter -> info.label.uppercase()
-                            else -> info.label.lowercase()
-                        }
-                    },
-                    isHighlighted = { info ->
-                        when (val k = info.key) {
-                            is Key.Modifier -> activeModifiers.contains(k)
-                            is Key.Function -> if (k == Key.Function.CapsLock) isCapsLocked else false
-                            else -> false
-                        }
-                    },
-                    onKeyClick = { info ->
-                        when (val clickedKey = info.key) {
-                            is Key.Modifier -> {
-                                if (clickedKey in activeModifiers) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.ToggleOff)
-                                    activeModifiers = activeModifiers - clickedKey
-                                } else {
-                                    haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
-                                    activeModifiers = activeModifiers + clickedKey
-                                }
-                            }
-
-                            is Key.Function -> {
-                                if (clickedKey == Key.Function.CapsLock) {
-                                    isCapsLocked = !isCapsLocked
-                                    strike(Key.Function.CapsLock)
-                                } else {
-                                    strike(clickedKey)
-                                }
-                            }
-
-                            else -> {
-                                strike(clickedKey)
-                                activeModifiers = activeModifiers - Key.Modifier.LeftShift - Key.Modifier.RightShift
-                            }
-                        }
-                    }
-                )
+                else -> State.Disconnected
             }
-
-            else -> State.Disconnected
         }
     }
 
@@ -118,9 +118,9 @@ object BluetoothKeyboard {
         data object Disconnected : State
 
         data class Connected(
-            val onKeyClick: (KeyInfo) -> Unit,
             val getDisplayLabel: (KeyInfo) -> String,
             val isHighlighted: (KeyInfo) -> Boolean,
+            val onKeyClick: (KeyInfo) -> Unit = {},
         ) : State {
 
             data class KeyInfo(
@@ -137,10 +137,10 @@ object BluetoothKeyboard {
     @Composable
     operator fun invoke(
         modifier: Modifier = Modifier,
-        presenter: @Composable () -> State = { present() },
+        presenter: KoinPresenter<State> = injectPresenter<State>(),
     ) {
         Box(modifier = modifier.fillMaxWidth()) {
-            when (val state = presenter()) {
+            when (val state = presenter.present()) {
                 is State.Disconnected -> {
                     Text(
                         text = "Keyboard Disconnected",
@@ -323,5 +323,10 @@ object BluetoothKeyboard {
     }
 }
 
-
+@Preview
+@Composable
+fun BluetoothKeyboardPreview() =
+    PreviewApplication {
+        BluetoothKeyboard()
+    }
 

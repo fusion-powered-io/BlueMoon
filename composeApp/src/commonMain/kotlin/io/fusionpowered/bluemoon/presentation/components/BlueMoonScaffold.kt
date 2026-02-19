@@ -4,35 +4,11 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.BottomSheetScaffoldState
-import androidx.compose.material3.Icon
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -45,61 +21,66 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import compose.icons.TablerIcons
-import compose.icons.tablericons.Bulb
-import compose.icons.tablericons.CirclePlus
-import compose.icons.tablericons.Keyboard
-import compose.icons.tablericons.MinusVertical
-import compose.icons.tablericons.Mouse
+import compose.icons.tablericons.*
+import io.fusionpowered.bluemoon.bootstrap.KoinPresenter
+import io.fusionpowered.bluemoon.bootstrap.injectPresenter
 import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothClient
 import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothSettings
 import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
 import io.fusionpowered.bluemoon.presentation.components.BlueMoonScaffold.State.SheetContent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
+import org.koin.core.annotation.Factory
+import org.koin.core.annotation.Qualifier
 
 object BlueMoonScaffold {
 
-    @Composable
-    fun present(
-        bluetoothClient: BluetoothClient = koinInject(),
-        bluetoothSettings: BluetoothSettings = koinInject(),
-    ): State {
-        val connected by bluetoothClient.connectionStateFlow.collectAsStateWithLifecycle(ConnectionState.Disconnected)
-        val sheetContent = remember { mutableStateOf(SheetContent.Touchpad) }
-        val scaffoldState = rememberBottomSheetScaffoldState(
-            bottomSheetState = rememberStandardBottomSheetState(
-                skipHiddenState = false
+    @Qualifier(State::class)
+    @Factory
+    class Presenter(
+        private val bluetoothClient: BluetoothClient,
+        private val bluetoothSettings: BluetoothSettings,
+    ) : KoinPresenter<State> {
+
+        @Composable
+        override fun present(): State {
+            val connected by bluetoothClient.connectionStateFlow.collectAsStateWithLifecycle(ConnectionState.Disconnected)
+            val sheetContent = remember { mutableStateOf(SheetContent.Touchpad) }
+            val scaffoldState = rememberBottomSheetScaffoldState(
+                bottomSheetState = rememberStandardBottomSheetState(
+                    skipHiddenState = false
+                )
             )
-        )
-        var blackOutState by remember { mutableStateOf(false) }
+            var blackOutState by remember { mutableStateOf(false) }
 
 
-        LaunchedEffect(connected) {
-            when (connected) {
-                is ConnectionState.Connected -> scaffoldState.bottomSheetState.show()
-                else -> scaffoldState.bottomSheetState.hide()
+            LaunchedEffect(connected) {
+                when (connected) {
+                    is ConnectionState.Connected -> scaffoldState.bottomSheetState.show()
+                    else -> scaffoldState.bottomSheetState.hide()
+                }
+            }
+
+            LaunchedEffect(scaffoldState.bottomSheetState.targetValue) {
+                if (scaffoldState.bottomSheetState.targetValue == SheetValue.Hidden && connected is ConnectionState.Connected) {
+                    scaffoldState.bottomSheetState.partialExpand()
+                }
+            }
+
+            return when {
+                blackOutState -> State.BlackedOut(
+                    onBlackoutClick = { blackOutState = false }
+                )
+
+                else -> State.Normal(
+                    onPairClick = { bluetoothSettings.launch() },
+                    onBlackoutClick = { blackOutState = true },
+                    sheetContent = sheetContent,
+                    scaffoldState = scaffoldState
+                )
             }
         }
 
-        LaunchedEffect(scaffoldState.bottomSheetState.targetValue) {
-            if (scaffoldState.bottomSheetState.targetValue == SheetValue.Hidden && connected is ConnectionState.Connected) {
-                scaffoldState.bottomSheetState.partialExpand()
-            }
-        }
-
-        return when {
-            blackOutState -> State.BlackedOut(
-                onBlackoutClick = { blackOutState = false }
-            )
-
-            else -> State.Normal(
-                onPairClick = { bluetoothSettings.launch() },
-                onBlackoutClick = { blackOutState = true },
-                sheetContent = sheetContent,
-                scaffoldState = scaffoldState
-            )
-        }
     }
 
     sealed interface State {
@@ -124,12 +105,10 @@ object BlueMoonScaffold {
     @Composable
     operator fun invoke(
         modifier: Modifier = Modifier,
-        presenter: @Composable () -> State = ::present,
-        touchpadPresenter: @Composable () -> BluetoothTouchpad.State = { BluetoothTouchpad.present() },
-        keyboardPresenter: @Composable () -> BluetoothKeyboard.State = { BluetoothKeyboard.present() },
+        presenter: KoinPresenter<State> = injectPresenter<State>(),
         content: @Composable () -> Unit,
     ) {
-        when (val state = presenter()) {
+        when (val state = presenter.present()) {
             is State.BlackedOut -> {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -159,9 +138,7 @@ object BlueMoonScaffold {
                     },
                     sheetContent = {
                         SheetContent(
-                            sheetContent = state.sheetContent,
-                            touchpadPresenter = touchpadPresenter,
-                            keyboardPresenter = keyboardPresenter,
+                            sheetContent = state.sheetContent
                         )
                     },
                     // THEME OVERRIDES:
@@ -348,9 +325,7 @@ object BlueMoonScaffold {
     @Composable
     private fun SheetContent(
         modifier: Modifier = Modifier,
-        sheetContent: MutableState<SheetContent>,
-        touchpadPresenter: @Composable () -> BluetoothTouchpad.State = { BluetoothTouchpad.present() },
-        keyboardPresenter: @Composable () -> BluetoothKeyboard.State = { BluetoothKeyboard.present() },
+        sheetContent: MutableState<SheetContent>
     ) {
         AnimatedContent(
             modifier = modifier
@@ -364,8 +339,8 @@ object BlueMoonScaffold {
             label = "animated content"
         ) { target ->
             when (target) {
-                SheetContent.Touchpad -> BluetoothTouchpad(presenter = touchpadPresenter)
-                SheetContent.Keyboard -> BluetoothKeyboard(presenter = keyboardPresenter)
+                SheetContent.Touchpad -> BluetoothTouchpad()
+                SheetContent.Keyboard -> BluetoothKeyboard()
             }
         }
     }

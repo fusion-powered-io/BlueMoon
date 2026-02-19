@@ -1,11 +1,7 @@
 package io.fusionpowered.bluemoon.presentation.views.deviceselector
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,17 +9,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -34,8 +20,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
@@ -52,67 +36,78 @@ import compose.icons.TablerIcons
 import compose.icons.tablericons.Bluetooth
 import compose.icons.tablericons.DeviceLaptop
 import compose.icons.tablericons.DeviceMobile
+import io.fusionpowered.bluemoon.bootstrap.KoinPresenter
+import io.fusionpowered.bluemoon.bootstrap.injectPresenter
 import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothClient
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice.MajorClass.COMPUTER
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice.MajorClass.PHONE
 import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
 import io.fusionpowered.bluemoon.presentation.modifier.specularShine
-import io.fusionpowered.bluemoon.presentation.views.deviceselector.Device.State
+import io.fusionpowered.bluemoon.presentation.preview.PreviewApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
+import org.koin.core.annotation.Factory
+import org.koin.core.annotation.InjectedParam
+import org.koin.core.annotation.Qualifier
+import org.koin.core.parameter.parametersOf
 import kotlin.math.absoluteValue
 
 object Device {
 
-    @Composable
-    fun present(
-        device: BluetoothDevice,
-        bluetoothClient: BluetoothClient = koinInject(),
-        coroutineScope: CoroutineScope = rememberCoroutineScope(),
-    ): State {
-        val connectionState by bluetoothClient.connectionStateFlow
-            .collectAsStateWithLifecycle(ConnectionState.Disconnected)
 
-        return when (val it = connectionState) {
-            is ConnectionState.Connecting if (it.device == device) -> {
-                State.Connecting(
-                    device = it.device,
-                    onClick = { bluetoothClient.disconnect(device) }
-                )
-            }
+    @Qualifier(State::class)
+    @Factory
+    class Presenter(
+        @InjectedParam private val device: BluetoothDevice,
+        private val bluetoothClient: BluetoothClient
+    ) : KoinPresenter<State> {
 
-            is ConnectionState.Connected if (it.device == device) -> {
-                State.Connected(
-                    device = it.device,
-                    onClick = { bluetoothClient.disconnect(device) }
-                )
-            }
+        @Composable
+        override fun present(): State {
+            val coroutineScope: CoroutineScope = rememberCoroutineScope()
+            val connectionState by bluetoothClient.connectionStateFlow
+                .collectAsStateWithLifecycle(ConnectionState.Disconnected)
 
-            is ConnectionState.Connected if (it.device != device) -> {
-                State.Disconnected(
-                    device = device,
-                    onClick = {
-                        bluetoothClient.disconnect(it.device)
-                        coroutineScope.launch {
-                            delay(500) // Give it some time to disconnect
-                            bluetoothClient.connect(device)
+            return when (val it = connectionState) {
+                is ConnectionState.Connecting if (it.device == device) -> {
+                    State.Connecting(
+                        device = it.device,
+                        onClick = { bluetoothClient.disconnect(device) }
+                    )
+                }
+
+                is ConnectionState.Connected if (it.device == device) -> {
+                    State.Connected(
+                        device = it.device,
+                        onClick = { bluetoothClient.disconnect(device) }
+                    )
+                }
+
+                is ConnectionState.Connected if (it.device != device) -> {
+                    State.Disconnected(
+                        device = device,
+                        onClick = {
+                            bluetoothClient.disconnect(it.device)
+                            coroutineScope.launch {
+                                delay(500) // Give it some time to disconnect
+                                bluetoothClient.connect(device)
+                            }
                         }
-                    }
-                )
-            }
+                    )
+                }
 
-            else -> {
-                State.Disconnected(
-                    device = device,
-                    onClick = {
-                        coroutineScope.launch {
-                            bluetoothClient.connect(device)
+                else -> {
+                    State.Disconnected(
+                        device = device,
+                        onClick = {
+                            coroutineScope.launch {
+                                bluetoothClient.connect(device)
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -142,10 +137,11 @@ object Device {
 
     @Composable
     operator fun invoke(
+        device: BluetoothDevice,
         modifier: Modifier = Modifier,
-        presenter: @Composable () -> State,
+        presenter: KoinPresenter<State> = injectPresenter<State> { parametersOf(device) }
     ) {
-        val state = presenter()
+        val state = presenter.present()
         val scope = rememberCoroutineScope()
         val density = LocalDensity.current.density
 
@@ -235,8 +231,6 @@ object Device {
         }
     }
 
-
-
     @Composable
     private fun DeviceClassIcon(
         state: State,
@@ -323,15 +317,13 @@ object Device {
 @Preview
 @Composable
 fun DevicePreview() {
-    Device(
-        presenter = {
-            State.Connected(
-                device = BluetoothDevice(
-                    name = "test device",
-                    mac = "00:00:00:00:00:00",
-                    majorClass = COMPUTER
-                )
+    PreviewApplication {
+        Device(
+            device = BluetoothDevice(
+                name = "test device",
+                mac = "00:00:00:00:00:01",
+                majorClass = COMPUTER
             )
-        }
-    )
+        )
+    }
 }

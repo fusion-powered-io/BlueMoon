@@ -4,11 +4,12 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import io.fusionpowered.bluemoon.presentation.views.deviceselector.DeviceSelector
 import org.koin.core.annotation.Single
+import org.koin.core.logger.EmptyLogger
 import org.koin.core.logger.Logger
 
 @Single
 class Navigator(
-    private val logger: Logger
+    private val logger: Logger = EmptyLogger(),
 ) {
     val backStack: SnapshotStateList<Any> = mutableStateListOf(DeviceSelector.Screen)
 
