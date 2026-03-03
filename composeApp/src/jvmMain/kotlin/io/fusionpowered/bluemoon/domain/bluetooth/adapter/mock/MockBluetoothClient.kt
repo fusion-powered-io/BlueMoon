@@ -1,8 +1,8 @@
-package io.fusionpowered.bluemoon.domain.bluetooth.application
+package io.fusionpowered.bluemoon.domain.bluetooth.adapter.mock
 
-import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothClient
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
 import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
+import io.fusionpowered.bluemoon.domain.bluetooth.port.BluetoothClient
 import io.fusionpowered.bluemoon.domain.controller.model.ControllerState
 import io.fusionpowered.bluemoon.domain.keyboard.model.KeyboardState
 import io.fusionpowered.bluemoon.domain.touchpad.model.TouchpadState
@@ -11,13 +11,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.core.annotation.Single
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.koin.core.logger.Logger
 
 @Single
-actual class BluetoothService actual constructor() : KoinComponent, BluetoothClient {
-
-    private val logger: Logger by inject()
+class MockBluetoothClient(
+    private val logger: Logger
+): KoinComponent, BluetoothClient {
 
     val mockDevices = setOf(
         BluetoothDevice(
@@ -64,6 +63,5 @@ actual class BluetoothService actual constructor() : KoinComponent, BluetoothCli
         volumeState: VolumeState,
     ) {
     }
-
 
 }

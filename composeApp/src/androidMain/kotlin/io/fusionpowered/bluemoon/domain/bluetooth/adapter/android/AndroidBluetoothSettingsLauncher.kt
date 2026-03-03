@@ -1,17 +1,16 @@
-package io.fusionpowered.bluemoon.domain.bluetooth.application
+package io.fusionpowered.bluemoon.domain.bluetooth.adapter.android
 
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
-import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothSettings
+import io.fusionpowered.bluemoon.domain.bluetooth.port.BluetoothSettingsLauncher
 import org.koin.core.annotation.Single
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 @Single
-actual class BluetoothSettingsService actual constructor() : BluetoothSettings, KoinComponent {
-
-    private val applicationContext by inject<Context>()
+class AndroidBluetoothSettingsLauncher(
+    private val applicationContext: Context,
+) : BluetoothSettingsLauncher, KoinComponent {
 
     override fun launch() {
         Intent(Settings.ACTION_BLUETOOTH_SETTINGS)

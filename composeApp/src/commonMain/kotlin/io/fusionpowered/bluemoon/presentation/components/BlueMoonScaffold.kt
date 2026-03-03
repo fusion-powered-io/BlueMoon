@@ -4,11 +4,35 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.BottomSheetScaffoldState
+import androidx.compose.material3.Icon
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -21,11 +45,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import compose.icons.TablerIcons
-import compose.icons.tablericons.*
+import compose.icons.tablericons.Bulb
+import compose.icons.tablericons.CirclePlus
+import compose.icons.tablericons.Keyboard
+import compose.icons.tablericons.MinusVertical
+import compose.icons.tablericons.Mouse
 import io.fusionpowered.bluemoon.bootstrap.KoinPresenter
 import io.fusionpowered.bluemoon.bootstrap.injectPresenter
-import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothClient
-import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothSettings
+import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothManager
 import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
 import io.fusionpowered.bluemoon.presentation.components.BlueMoonScaffold.State.SheetContent
 import kotlinx.coroutines.CoroutineScope
@@ -38,13 +65,12 @@ object BlueMoonScaffold {
     @Qualifier(State::class)
     @Factory
     class Presenter(
-        private val bluetoothClient: BluetoothClient,
-        private val bluetoothSettings: BluetoothSettings,
+        private val bluetoothManager: BluetoothManager,
     ) : KoinPresenter<State> {
 
         @Composable
         override fun present(): State {
-            val connected by bluetoothClient.connectionStateFlow.collectAsStateWithLifecycle(ConnectionState.Disconnected)
+            val connected by bluetoothManager.connectionStateFlow.collectAsStateWithLifecycle(ConnectionState.Disconnected)
             val sheetContent = remember { mutableStateOf(SheetContent.Touchpad) }
             val scaffoldState = rememberBottomSheetScaffoldState(
                 bottomSheetState = rememberStandardBottomSheetState(
@@ -73,7 +99,7 @@ object BlueMoonScaffold {
                 )
 
                 else -> State.Normal(
-                    onPairClick = { bluetoothSettings.launch() },
+                    onPairClick = { bluetoothManager.launchBluetoothSettings() },
                     onBlackoutClick = { blackOutState = true },
                     sheetContent = sheetContent,
                     scaffoldState = scaffoldState
@@ -325,7 +351,7 @@ object BlueMoonScaffold {
     @Composable
     private fun SheetContent(
         modifier: Modifier = Modifier,
-        sheetContent: MutableState<SheetContent>
+        sheetContent: MutableState<SheetContent>,
     ) {
         AnimatedContent(
             modifier = modifier

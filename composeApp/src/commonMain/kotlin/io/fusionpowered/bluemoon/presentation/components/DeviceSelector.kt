@@ -13,11 +13,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fusionpowered.bluemoon.bootstrap.KoinPresenter
-import io.fusionpowered.bluemoon.bootstrap.injectPresenter
-import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothClient
-import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
-import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice.MajorClass.*
 import io.fusionpowered.bluemoon.bootstrap.PreviewApplication
+import io.fusionpowered.bluemoon.bootstrap.injectPresenter
+import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothManager
+import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
+import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice.MajorClass.COMPUTER
+import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice.MajorClass.PHONE
+import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice.MajorClass.UNCATEGORIZED
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import org.koin.core.annotation.Factory
@@ -31,12 +33,12 @@ object DeviceSelector {
     @Qualifier(State::class)
     @Factory
     class Presenter(
-        private val bluetoothClient: BluetoothClient,
+        private val bluetoothManager: BluetoothManager,
     ) : KoinPresenter<State> {
 
         @Composable
         override fun present(): State {
-            val availableDevices by bluetoothClient.pairedDevices
+            val availableDevices by bluetoothManager.pairedDevices
                 .map {
                     it.filter { device -> device.majorClass in setOf(COMPUTER, PHONE, UNCATEGORIZED) }.toSet()
                 }
@@ -50,13 +52,13 @@ object DeviceSelector {
     }
 
     data class State(
-        val availableDevices: Set<BluetoothDevice> = emptySet()
+        val availableDevices: Set<BluetoothDevice> = emptySet(),
     )
 
     @Composable
     operator fun invoke(
         modifier: Modifier = Modifier,
-        presenter: KoinPresenter<State> = injectPresenter<State>()
+        presenter: KoinPresenter<State> = injectPresenter<State>(),
     ) {
         val state = presenter.present()
 

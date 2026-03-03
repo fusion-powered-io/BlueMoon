@@ -41,7 +41,6 @@ fun UiEntryPoint(
             Background()
             BlueMoonScaffold {
                 DeviceSelector()
-
             }
         }
     }
@@ -77,7 +76,7 @@ private fun UiEntryPointExpandedTouchpadPreview() =
         overrides = {
             presenter<BlueMoonScaffold.State> {
                 BlueMoonScaffold.State.Normal(
-                    sheetContent = mutableStateOf(Touchpad),
+                    sheetContent = remember { mutableStateOf(Touchpad) },
                     scaffoldState = rememberBottomSheetScaffoldState(
                         bottomSheetState = rememberStandardBottomSheetState(initialValue = Expanded)
                     )

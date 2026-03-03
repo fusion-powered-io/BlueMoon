@@ -3,7 +3,13 @@ package io.fusionpowered.bluemoon.presentation.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -16,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fusionpowered.bluemoon.bootstrap.KoinPresenter
 import io.fusionpowered.bluemoon.bootstrap.injectPresenter
-import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothClient
+import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothManager
 import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
 import io.fusionpowered.bluemoon.domain.touchpad.model.TouchpadState
 import org.koin.core.annotation.Factory
@@ -30,12 +36,12 @@ object BluetoothTouchpad {
     @Qualifier(State::class)
     @Factory
     class Presenter(
-        private val bluetoothClient: BluetoothClient,
+        private val bluetoothManager: BluetoothManager,
     ) : KoinPresenter<State> {
 
         @Composable
         override fun present(): State {
-            val connectionState by bluetoothClient.connectionStateFlow.collectAsStateWithLifecycle()
+            val connectionState by bluetoothManager.connectionStateFlow.collectAsStateWithLifecycle()
             val haptic = LocalHapticFeedback.current
 
             return when (val connection = connectionState) {
@@ -62,8 +68,8 @@ object BluetoothTouchpad {
 
                                     if (downChanges.size >= 2) {
                                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        bluetoothClient.send(connection.device, TouchpadState(rightButton = true))
-                                        bluetoothClient.send(connection.device, TouchpadState(rightButton = false))
+                                        bluetoothManager.send(connection.device, TouchpadState(rightButton = true))
+                                        bluetoothManager.send(connection.device, TouchpadState(rightButton = false))
                                         downChanges.forEach { it.consume() }
                                         continue
                                     }
@@ -82,7 +88,7 @@ object BluetoothTouchpad {
 
                                     if ((System.currentTimeMillis() - tapAt) in (21..149)) {
                                         isTapDragging = true
-                                        bluetoothClient.send(connection.device, TouchpadState(leftButton = true))
+                                        bluetoothManager.send(connection.device, TouchpadState(leftButton = true))
                                     }
 
                                     downChange.consume()
@@ -101,7 +107,7 @@ object BluetoothTouchpad {
                                             val scrollAmount = pendingScroll.toInt()
 
                                             if (scrollAmount != 0) {
-                                                bluetoothClient.send(
+                                                bluetoothManager.send(
                                                     connection.device,
                                                     TouchpadState(wheel = scrollAmount)
                                                 )
@@ -120,18 +126,18 @@ object BluetoothTouchpad {
                                             val now = System.currentTimeMillis()
                                             if (isTapDragging) {
                                                 isTapDragging = false
-                                                bluetoothClient.send(
+                                                bluetoothManager.send(
                                                     connection.device,
                                                     TouchpadState(leftButton = false)
                                                 )
                                             } else if ((now - leftDownAt) in (21..149)) {
                                                 tapAt = now
                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                bluetoothClient.send(
+                                                bluetoothManager.send(
                                                     connection.device,
                                                     TouchpadState(leftButton = true)
                                                 )
-                                                bluetoothClient.send(
+                                                bluetoothManager.send(
                                                     connection.device,
                                                     TouchpadState(leftButton = false)
                                                 )
@@ -149,7 +155,7 @@ object BluetoothTouchpad {
                                             val outDY = pendingDY.toInt()
 
                                             if (outDX != 0 || outDY != 0) {
-                                                bluetoothClient.send(
+                                                bluetoothManager.send(
                                                     connection.device, TouchpadState(
                                                         deltaX = outDX,
                                                         deltaY = outDY,

@@ -1,4 +1,4 @@
-package io.fusionpowered.bluemoon.domain.bluetooth
+package io.fusionpowered.bluemoon.domain.bluetooth.port
 
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
 import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState

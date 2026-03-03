@@ -7,7 +7,7 @@ import org.koin.core.scope.Scope
 
 @Module
 @Configuration
-object LoggingModule {
+object CommonModule {
 
     @Single
     fun providesLogger(scope: Scope) =

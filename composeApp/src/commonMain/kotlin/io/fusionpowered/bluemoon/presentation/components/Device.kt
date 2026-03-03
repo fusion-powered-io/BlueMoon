@@ -1,7 +1,11 @@
 package io.fusionpowered.bluemoon.presentation.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,7 +13,17 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -37,14 +51,14 @@ import compose.icons.tablericons.Bluetooth
 import compose.icons.tablericons.DeviceLaptop
 import compose.icons.tablericons.DeviceMobile
 import io.fusionpowered.bluemoon.bootstrap.KoinPresenter
+import io.fusionpowered.bluemoon.bootstrap.PreviewApplication
 import io.fusionpowered.bluemoon.bootstrap.injectPresenter
-import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothClient
+import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothManager
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice.MajorClass.COMPUTER
 import io.fusionpowered.bluemoon.domain.bluetooth.model.BluetoothDevice.MajorClass.PHONE
 import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
 import io.fusionpowered.bluemoon.presentation.modifier.specularShine
-import io.fusionpowered.bluemoon.bootstrap.PreviewApplication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -61,27 +75,27 @@ object Device {
     @Factory
     class Presenter(
         @InjectedParam private val device: BluetoothDevice,
-        private val bluetoothClient: BluetoothClient
+        private val bluetoothManager: BluetoothManager,
     ) : KoinPresenter<State> {
 
         @Composable
         override fun present(): State {
             val coroutineScope: CoroutineScope = rememberCoroutineScope()
-            val connectionState by bluetoothClient.connectionStateFlow
+            val connectionState by bluetoothManager.connectionStateFlow
                 .collectAsStateWithLifecycle(ConnectionState.Disconnected)
 
             return when (val it = connectionState) {
                 is ConnectionState.Connecting if (it.device == device) -> {
                     State.Connecting(
                         device = it.device,
-                        onClick = { bluetoothClient.disconnect(device) }
+                        onClick = { bluetoothManager.disconnect(device) }
                     )
                 }
 
                 is ConnectionState.Connected if (it.device == device) -> {
                     State.Connected(
                         device = it.device,
-                        onClick = { bluetoothClient.disconnect(device) }
+                        onClick = { bluetoothManager.disconnect(device) }
                     )
                 }
 
@@ -89,10 +103,10 @@ object Device {
                     State.Disconnected(
                         device = device,
                         onClick = {
-                            bluetoothClient.disconnect(it.device)
+                            bluetoothManager.disconnect(it.device)
                             coroutineScope.launch {
                                 delay(500) // Give it some time to disconnect
-                                bluetoothClient.connect(device)
+                                bluetoothManager.connect(device)
                             }
                         }
                     )
@@ -103,7 +117,7 @@ object Device {
                         device = device,
                         onClick = {
                             coroutineScope.launch {
-                                bluetoothClient.connect(device)
+                                bluetoothManager.connect(device)
                             }
                         }
                     )
@@ -139,7 +153,7 @@ object Device {
     operator fun invoke(
         device: BluetoothDevice,
         modifier: Modifier = Modifier,
-        presenter: KoinPresenter<State> = injectPresenter<State> { parametersOf(device) }
+        presenter: KoinPresenter<State> = injectPresenter<State> { parametersOf(device) },
     ) {
         val state = presenter.present()
         val scope = rememberCoroutineScope()

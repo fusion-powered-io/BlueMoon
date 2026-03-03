@@ -3,10 +3,21 @@ package io.fusionpowered.bluemoon.presentation.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,13 +35,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.fusionpowered.bluemoon.bootstrap.KoinPresenter
+import io.fusionpowered.bluemoon.bootstrap.PreviewApplication
 import io.fusionpowered.bluemoon.bootstrap.injectPresenter
-import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothClient
+import io.fusionpowered.bluemoon.domain.bluetooth.BluetoothManager
 import io.fusionpowered.bluemoon.domain.bluetooth.model.ConnectionState
 import io.fusionpowered.bluemoon.domain.keyboard.model.KeyboardState
 import io.fusionpowered.bluemoon.domain.keyboard.model.KeyboardState.Key
 import io.fusionpowered.bluemoon.presentation.components.BluetoothKeyboard.State.Connected.KeyInfo
-import io.fusionpowered.bluemoon.bootstrap.PreviewApplication
 import org.koin.core.annotation.Factory
 import org.koin.core.annotation.Qualifier
 
@@ -40,12 +51,12 @@ object BluetoothKeyboard {
     @Qualifier(State::class)
     @Factory
     class Presenter(
-        private val bluetoothClient: BluetoothClient,
+        private val bluetoothManager: BluetoothManager,
     ) : KoinPresenter<State> {
 
         @Composable
         override fun present(): State {
-            val connectionState by bluetoothClient.connectionStateFlow.collectAsStateWithLifecycle()
+            val connectionState by bluetoothManager.connectionStateFlow.collectAsStateWithLifecycle()
             val haptic = LocalHapticFeedback.current
 
             return when (val conn = connectionState) {
@@ -57,8 +68,8 @@ object BluetoothKeyboard {
                     // The HID can support up to 6 keys, so this could be improved.
                     fun strike(key: Key) {
                         haptic.performHapticFeedback(HapticFeedbackType.KeyboardTap)
-                        bluetoothClient.send(conn.device, KeyboardState(activeModifiers, setOf(key)))
-                        bluetoothClient.send(conn.device, KeyboardState(activeModifiers, emptySet()))
+                        bluetoothManager.send(conn.device, KeyboardState(activeModifiers, setOf(key)))
+                        bluetoothManager.send(conn.device, KeyboardState(activeModifiers, emptySet()))
                     }
 
                     State.Connected(
