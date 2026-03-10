@@ -48,8 +48,8 @@ We use a custom MVI implementation centered around the `KoinPresenter`. Each UI 
 - **`object [ComponentName]`**: The wrapper for the entire component.
 - **`data class State`**: Represents the immutable UI state. Use a `sealed interface` if there are multiple distinct states.
 - **`Presenter`**: 
-    - Annotated with `@Qualifier(State::class)` and `@Factory`.
-    - Implements `KoinPresenter<State>`.
+    - Annotated with `@Qualifier(State::class)` and `@KoinViewModel`.
+    - extends `KoinPresenter<State>`.
     - Overrides `@Composable fun present(): State` to coordinate logic and returns the state.
 - **`invoke()`**:
     - A `@Composable operator fun invoke(...)`.
