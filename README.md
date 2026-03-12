@@ -1,7 +1,7 @@
 # BlueMoon
 
 <p align="center">
-  <img src="/composeApp/src/androidMain/res/mipmap-xxxhdpi/ic_launcher_round.webp" alt="BlueMoon Logo" width="200">
+  <img src="/appAndroid/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" alt="BlueMoon Logo" width="200">
 </p>
 
 <p align="center">
