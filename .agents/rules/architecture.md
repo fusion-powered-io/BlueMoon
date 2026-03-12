@@ -58,7 +58,7 @@ We use a custom MVI implementation centered around the `KoinPresenter`. Each UI 
     - Renders the UI based on the state.
 
 #### [Structure]
--   **`components/`**: UI component objects (e.g., `CatalogGrid.kt`).
+-   **`components/`**: UI component objects.
 -   **`UiEntryPoint.kt`**: Main entry point for the UI.
 -   **`PresentationModule.kt`**: Koin module for presentation-specific dependencies.
 
@@ -66,8 +66,7 @@ We use a custom MVI implementation centered around the `KoinPresenter`. Each UI 
 Contains the application initialization logic and global configuration, including the `KoinPresenter` infrastructure.
 
 ## Dependency Injection (Koin)
-We use Koin for dependency injection. Most services and repositories should be annotated with `@Single` or `@Factory` and included in their respective feature's Koin module.
+We use Koin for dependency injection. Most services and repositories should be annotated with `@Single` or `@KoinViewModel` and included in their respective feature's Koin module.
 
 ## UI Patterns
--   **Adaptive UI**: Use the custom `AdaptiveSizing.kt` and `Modifier` extensions to ensure the UI looks great on various screen sizes.
 -   **State Management**: Use `StateFlow` in services to expose UI state.
